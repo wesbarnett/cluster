@@ -11,7 +11,7 @@ sgdisk -n 4 -c 4:"BIOS boot partition" -t 4:ef02 /dev/sda
 
 # Extra disk
 sgdisk -o /dev/sdb
-sgdisk -n 3 -c 3:"Linux /data" -t 3:8300 /dev/sdb
+sgdisk -n 1 -c 1:"Linux /data" -t 1:8300 /dev/sdb
 
 # Format the partitions
 mkfs.ext4 /dev/sda1
