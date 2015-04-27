@@ -35,8 +35,9 @@ pacstrap -i /mnt base base-devel
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
 wget https://raw.githubusercontent.com/wesbarnett/cluster/master/arch-install-2
-
+chmod +x arch-install-2
 cp arch-install-2 /mnt/
 
+echo "You are now entering chroot environment. Run ./arch-install-2 to continue"
 # Base system is installed, now change to it and run postinstall script there
 arch-chroot /mnt /bin/bash

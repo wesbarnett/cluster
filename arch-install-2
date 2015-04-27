@@ -25,3 +25,25 @@ passwd
 # Install bootloader
 grub-install --target=i386-pc --recheck /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
+
+# Install some things we need
+pacman -S vim openssh cmake wget git
+
+# Enable wheel group to have sudo
+sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+
+# Don't allow root login for ssh
+sed -i 's/# PermitRootLogin.*/PermitRootLogin no/g' /etc/ssh/sshd_config
+
+# Enable ssh
+systemctl enable sshd
+
+# Add users
+for user in wes du hank kun alex lalit bin; do
+	useradd -m -G wheel -s /bin/bash $user
+	mkdir /data/$user
+	chown -R $user:user /data/$user
+	ln -s /data/$user /home/$user/data
+done
+
+exit
