@@ -34,5 +34,9 @@ pacstrap -i /mnt base base-devel
 # Make sure disks are automounted
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
+wget https://raw.githubusercontent.com/wesbarnett/cluster/master/arch-install-2
+
+cp arch-install-2 /mnt/
+
 # Base system is installed, now change to it and run postinstall script there
 arch-chroot /mnt /bin/bash
