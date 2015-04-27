@@ -1,0 +1,67 @@
+#!/bin/bash
+# Arch install script for cluster
+# Make sure internet is connected!
+
+# Partition the disks
+sgdisk -o /dev/sda
+sgdisk -n 1:2048:+250M -c 1:"Linux /boot" -t 1:8300 /dev/sda
+sgdisk -n 2:+0M:+50G -c 2:"Linux /" -t 2:8300 /dev/sda
+sgdisk -n 3 -c 3:"Linux /home" -t 3:8300 /dev/sda
+sgdisk -n 4 -c 4:"BIOS boot partition" -t 4:ef02 /dev/sda
+
+# Extra disk
+sgdisk -o /dev/sdb
+sgdisk -n 3 -c 3:"Linux /data" -t 3:8300 /dev/sdb
+
+# Format the partitions
+mkfs.ext4 /dev/sda1
+mkfs.ext4 /dev/sda2
+mkfs.ext4 /dev/sda3
+mkfs.ext4 /dev/sdb1
+
+# Mount the partitions (mount root first)
+mount /dev/sda2 /mnt
+mkdir -p /mnt/boot
+mount /dev/sda1 /mnt/boot
+mkdir -p /mnt/home
+mount /dev/sda3 /mnt/home
+mkdir -p /mnt/data
+mount /dev/sdb1 /mnt/data
+
+# Install base system
+pacstrap -i /mnt base base-devel
+
+# Make sure disks are automounted
+genfstab -U -p /mnt >> /mnt/etc/fstab
+
+# Base system is installed, now change to it
+arch-chroot /mnt /bin/bash
+
+# Set language
+sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /etc/locale.gen
+locale-gen
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+export LANG=en_US.UTF-8
+
+# Set time zone
+ln -s /usr/share/zoneinfo/US/Central /etc/localtime
+hwclock --systohc --utc
+
+# Enable networking
+systemctl enable dhcpcd@en01.service
+
+# Install a few needed things
+pacman -S grub
+
+# Create ramdisk environment
+mkinitcpio -p linux
+
+# Set root password
+passwd
+
+# Install bootloader
+grub-install --target=i386-pc --recheck /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
+
+exit
+#reboot
