@@ -34,34 +34,5 @@ pacstrap -i /mnt base base-devel
 # Make sure disks are automounted
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
-# Base system is installed, now change to it
+# Base system is installed, now change to it and run postinstall script there
 arch-chroot /mnt /bin/bash
-
-# Set language
-sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /etc/locale.gen
-locale-gen
-echo LANG=en_US.UTF-8 > /etc/locale.conf
-export LANG=en_US.UTF-8
-
-# Set time zone
-ln -s /usr/share/zoneinfo/US/Central /etc/localtime
-hwclock --systohc --utc
-
-# Enable networking
-systemctl enable dhcpcd@en01.service
-
-# Install a few needed things
-pacman -S grub
-
-# Create ramdisk environment
-mkinitcpio -p linux
-
-# Set root password
-passwd
-
-# Install bootloader
-grub-install --target=i386-pc --recheck /dev/sda
-grub-mkconfig -o /boot/grub/grub.cfg
-
-exit
-#reboot
