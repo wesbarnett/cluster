@@ -146,6 +146,6 @@ GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
 PART3=install-part3
 wget $GITHUB/$PART3
 chmod +x install-part3
-echo "Restart and run part3."
+echo "Plug ethernet cable into network switch. Restart and run part3."
 
 exit
