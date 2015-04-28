@@ -19,7 +19,7 @@ done
 
 # Partition the disks
 echo "Partitioning /dev/sda..."
-sgdisk -o /dev/sda 
+sgdisk -og /dev/sda 
 sgdisk -n 1:2048:+$BOOT -c 1:"Linux /boot" -t 1:8300 /dev/sda
 sgdisk -n 2:+0M:+$ROOT -c 2:"Linux /" -t 2:8300 /dev/sda
 sgdisk -n 3 -c 3:"Linux /home" -t 3:8300 /dev/sda
@@ -27,7 +27,7 @@ sgdisk -n 4 -c 4:"BIOS boot partition" -t 4:ef02 /dev/sda
 
 # Extra disk
 echo "Partitioning /dev/sdb..."
-sgdisk -o /dev/sdb
+sgdisk -og /dev/sdb
 sgdisk -n 1 -c 1:"Linux /data" -t 1:8300 /dev/sdb
 
 # Format the partitions
