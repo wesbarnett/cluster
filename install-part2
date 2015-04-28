@@ -82,7 +82,7 @@ CONFIG
 echo "Enabling internal network interface..."
 systemctl enable network@$INTERFACE
 systemctl start network@$INTERFACE
-if [[ $MASTER==true ]]; then
+if [ '$MASTER' = true ]; then
 	echo "Enabling external network interface..."
 	systemctl enable dhcpcd@$INTERFACE2
 	systemctl start dhcpcd@$INTERFACE2
