@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Install some things we need
 pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw
 
@@ -14,7 +16,7 @@ sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 systemctl enable sshd
 
 rm /etc/resolv.conf
-ln -s /etc/systemd/network/resolv.conf /etc/resolv.conf
+ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
 useradd -m -G wheel -s /bin/bash wes
 passwd wes
