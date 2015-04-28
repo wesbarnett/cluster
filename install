@@ -1,6 +1,7 @@
 #!/bin/bash
 # Arch install script for cluster node
 
+GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
 PART2=install-part2
 
 echo "Which type of machine are you installing on?"
@@ -55,7 +56,7 @@ echo "Generating fstab..."
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
 echo "Getting part 2..."
-wget https://raw.githubusercontent.com/wesbarnett/cluster/master/PART2
+wget $GITHUB/$PART2
 chmod +x $PART2
 cp $PART2 /mnt/
 

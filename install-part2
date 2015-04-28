@@ -2,6 +2,8 @@
 
 set -e
 
+GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
+
 INTERFACE=eno1		# internal
 INTERFACE2=enp2s3	# external (on master)
 
@@ -11,6 +13,9 @@ select TYPE in master node; do
 		MYHOSTNAME=master
 		MASTER=true
 		NODE=1
+		pacman -q -S --noconfirm wget
+		wget $GITHUB/iptables.rules.gpg
+		wget $GITHUB/users.txt.gpg
 		break
 	elif [[ "$REPLY"  = 2 ]]; then
 		echo "Which node are you installing (give the number)?"
@@ -83,6 +88,22 @@ if [[ $MASTER==true ]]; then
 	systemctl start dhcpcd@$INTERFACE2
 fi
 
+echo "Updating hosts..."
+cat -> /etc/hosts <<HOSTS 
+192.168.0.1	master
+192.168.0.2	node2
+192.168.0.3	node3
+192.168.0.4	node4
+192.168.0.5	node5
+192.168.0.6	node6
+192.168.0.7	node7
+192.168.0.8	node8
+192.168.0.9	node9
+192.168.0.10	node10
+192.168.0.11	node11
+192.168.0.12	node12
+HOSTS
+
 # Create ramdisk environment
 echo "Creating initial ramdisk..."
 mkinitcpio -p linux
@@ -97,11 +118,19 @@ pacman -q -S --noconfirm grub
 grub-install --target=i386-pc --recheck /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
 
-pacman -q -S --noconfirm nfs-utils
+pacman -q -S --noconfirm nfs-utils wget
 
 # Create pacman cache share
 
 if [ "$MASTER" = true ]; then
+
+	echo "Setting up firewall..."
+	pacman -q -S --noconfirm iptables
+	gpg iptables.rules.gpg
+	sed -i 's/MYINTERFACE/'$INTERFACE2'/g' iptables.rules
+	mv iptables.rules /etc/iptables/
+	systemctl start iptables.service
+	systemctl enable iptables.service
 	
 	echo "Creating shared pacman cache..."
 	mkdir -p /srv/nfs4/pacmancache
@@ -109,8 +138,8 @@ if [ "$MASTER" = true ]; then
 
 	echo "/var/cache/pacman/pkg /srv/nfs4/pacmancache  none   bind   0   0" >> /etc/fstab
 
-	echo "/srv/nfs4/ 192.168.1.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
-	echo "/srv/nfs4/music 192.168.1.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
+	echo "/srv/nfs4/pacmancache 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
 
 	exportfs -rav
 
@@ -120,6 +149,17 @@ if [ "$MASTER" = true ]; then
 	systemctl enable nfs-server.service
 
 else
+
+	echo "Creating home directory export..."
+	mkdir -p /srv/nfs4/home
+
+	mount --bind /home /srv/nfs4/home
+	echo "/home /srv/nfs4/home  none   bind   0   0" >> /etc/fstab
+
+	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
+	echo "/srv/nfs4/home 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+
+	exportfs -rav
 
 	systemctl start rpcbind.service
 	systemctl enable rpcbind.service
@@ -137,7 +177,7 @@ else
 fi
 
 # Install some things we need
-pacman -q -S --noconfirm vim openssh cmake wget git locate zsh screen xorg-server fftw
+pacman -q -S --noconfirm vim openssh cmake git locate zsh screen xorg-server fftw
 
 # Update locate database
 updatedb
