@@ -50,7 +50,7 @@ systemctl enable systemd-resolved.service
 
 ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
-if [ '$MASTER' = true ]; then
+if [ "$MASTER" = true ]; then
 	echo "Enabling external network interface..."
 
 cat - > /etc/systemd/network/external.network <<NETCONFIG
