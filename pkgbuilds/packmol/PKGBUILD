@@ -1,5 +1,5 @@
-# PKGBUILD template to install packmol
-# Maintainer: Hector Martinez-Seara Monne <hseara ##[at]## gmail?com>
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+# Not for use in AUR
 pkgname=packmol
 pkgver=14.225
 pkgrel=1

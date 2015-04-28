@@ -1,0 +1,41 @@
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+# Not for use in AUR
+pkgname=gromacs
+pkgver=5.0.4
+pkgrel=4
+pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of motion for systems with hundreds to millions of particles.'
+url='http://www.gromacs.org/'
+license=("GPL")
+arch=('i686' 'x86_64')
+depends=('fftw' 'lesstif' 'perl' 'libxml2' 'libsm' 'libx11')
+makedepends=('cmake')
+options=('!libtool')
+source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
+sha1sums=('faeeab8486475b26bede1ab4ff762f23cd973b1e')
+
+build() {
+  mkdir -p ${srcdir}/single/${pkgname}-${pkgver}/build
+  cd ${srcdir}/single/${pkgname}-${pkgver}/build
+  cmake .. \
+        -DCMAKE_INSTALL_PREFIX=/usr
+  make
+}
+
+package() {
+
+  msg2 "Making the single precision executables"
+  cd ${srcdir}/single/${pkgname}-${pkgver}/build
+  make DESTDIR=${pkgdir} install
+  mv ${pkgdir}/usr/lib64 ${pkgdir}/usr/lib
+
+  msg2 "Installing completion and environment setup script"
+  mkdir -p ${pkgdir}/etc/profile.d/
+  mkdir -p ${pkgdir}/usr/share/bash-completion/completions
+  install -D -m755 ${srcdir}/${pkgname}-${pkgver}/src/programs/completion/gmx-completion.bash "${pkgdir}/usr/share/bash-completion/completions/gromacs"
+  mv ${pkgdir}/usr/bin/GMXRC.* ${pkgdir}/etc/profile.d/
+  sed "s:/usr/bin:/etc/profile.d:" ${pkgdir}/usr/bin/GMXRC > ${pkgdir}/etc/profile.d/GMXRC
+  chmod 755 ${pkgdir}/etc/profile.d/GMXRC
+  rm -f ${pkgdir}/usr/bin/completion.*
+  rm -f ${pkgdir}/usr/bin/GMXRC
+
+}
