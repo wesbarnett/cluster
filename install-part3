@@ -13,5 +13,8 @@ sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 # Enable ssh
 systemctl enable sshd
 
+rm /etc/resolv.conf
+ln -s /etc/systemd/network/resolv.conf /etc/resolv.conf
+
 useradd -m -G wheel -s /bin/bash wes
 passwd wes
