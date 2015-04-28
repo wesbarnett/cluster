@@ -1,0 +1,130 @@
+#!/bin/bash
+
+MYHOSTNAME=master
+INTERFACE=eno1
+USERS="wes du hank kun asaltzm lalit bmeng natalia"
+
+########################
+
+# Set language
+sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /etc/locale.gen
+locale-gen
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+export LANG=en_US.UTF-8
+
+# Set time zone
+ln -s /usr/share/zoneinfo/US/Central /etc/localtime
+hwclock --systohc --utc
+
+# Set hostname
+echo $MYHOSTNAME > /etc/hostname
+
+# Enable networking
+systemctl enable dhcpcd@en01.service
+
+# Install a few needed things
+pacman -S grub
+
+# Create ramdisk environment
+mkinitcpio -p linux
+
+# Set root password
+passwd
+
+# Install bootloader
+grub-install --target=i386-pc --recheck /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
+
+# Install some things we need
+pacman -S vim openssh cmake wget git locate zsh screen xorg-server nfs-utils fftw
+
+# Update locate database
+updatedb
+
+# Enable wheel group to have sudo
+sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+
+# Setup ssh
+sed -i -e 's/# PermitRootLogin.*/PermitRootLogin no/g' -e 's/# Banner.*/Banner /etc/issue.net/g' \
+	   -e 's/MaxStartups.*/MaxStartups 3:50:10/g' \
+	   -e 's/LoginGraceTime.*/LoginGraceTime 30/g' \
+	   -e 's/Protocol.*/Protocol 2/g' \
+       -e 's/# X11Forwarding.*/X11Forwarding yes'/etc/sshd_config
+
+
+
+# Enable ssh
+systemctl enable sshd
+
+# Add users and configure them
+for user in $USERS; do
+
+	useradd -m -G wheel -s /bin/bash $user
+	mkdir /data/$user
+	chown -R $user:$user /data/$user
+	passwd $user
+	chage -d 0 $user
+	mkdir -p /home/$user/.ssh
+
+	cat - >  /home/$user/.ssh/config << SSHCONFIG
+Host *
+ControlMaster auto
+ControlPath ~/.ssh/controlmaster/%r@%h:%p
+ControlPersist 600
+SSHCONFIG
+
+done
+
+# Create pacman cache share
+mkdir -p /srv/nfs4/pacmancache
+mount --bind /var/cache/pacman/pkg /srv/nfs4/pacmancache
+
+echo "/var/cache/pacman/pkg /srv/nfs4/pacmancache  none   bind   0   0" >> /etc/fstab
+
+echo "/srv/nfs4/ 192.168.1.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
+echo "/srv/nfs4/music 192.168.1.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+
+exportfs -rav
+
+systemctl start rpcbind.service
+systemctl enable rpcbind.service
+systemctl start nfs-server.service
+systemctl enable nfs-server.service
+
+# Sets up networking with static ip
+cat - > /etc/net-conf-$INTERFACE <<CONFIG
+address=192.168.0.1
+netmask=24
+broadcast=192.168.0.255
+gateway=192.168.0.1
+CONFIG
+
+cat - > /etc/systemd/system/network@.service <<CONFIG
+[Unit]
+Description=Network connectivity (%i)
+Wants=network.target
+Before=network.target
+BindsTo=sys-subsystem-net-devices-%i.device
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/conf.d/net-conf-%i
+
+ExecStart=ip link set dev %i up
+ExecStart=ip addr add \${address}/\${netmask} broadcast \${broadcast} dev %i
+ExecStart=[[ -z \${gateway} ]] || { ip route add default via \${gateway} }
+
+ExecStop=ip addr flush dev %i
+ExecStop=ip route flush dev %i
+ExecStop=ip link set dev %i down
+
+[Install]
+WantedBy=multi-user.target
+CONFIG
+
+systemctl enable network@$INTERFACE
+systemctl start network@$INTERFACE
+
+exit
