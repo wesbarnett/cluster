@@ -1,19 +1,39 @@
 #!/bin/bash
 # Arch install script for cluster node
 
+PART2=install-part2
+
+echo "Which type of machine are you installing on?"
+select TYPE in master node; do
+	if [[ $REPLY  -eq 1 ]]; then
+		BOOT=200M
+		ROOT=20G
+		VAR=15G
+		break
+	elif [[ $REPLY  -eq 2 ]]; then
+		BOOT=200M
+		ROOT=20G
+		VAR=8G
+		break
+	fi
+done
+
 # Partition the disks
-sgdisk -o /dev/sda
-sgdisk -n 1:2048:+200M -c 1:"Linux /boot" -t 1:8300 /dev/sda
-sgdisk -n 2:+0M:+20G -c 2:"Linux /" -t 2:8300 /dev/sda
-sgdisk -n 3:+0M:+8G -c 3:"Linux /var" -t 2:8300 /dev/sda
+echo "Partitioning /dev/sda..."
+sgdisk -o /dev/sda 
+sgdisk -n 1:2048:+$BOOT -c 1:"Linux /boot" -t 1:8300 /dev/sda
+sgdisk -n 2:+0M:+$ROOT -c 2:"Linux /" -t 2:8300 /dev/sda
+sgdisk -n 3:+0M:+$VAR -c 3:"Linux /var" -t 2:8300 /dev/sda
 sgdisk -n 4 -c 4:"Linux /home" -t 4:8300 /dev/sda
 sgdisk -n 5 -c 5:"BIOS boot partition" -t 5:ef02 /dev/sda
 
 # Extra disk
+echo "Partitioning /dev/sdb..."
 sgdisk -o /dev/sdb
 sgdisk -n 1 -c 1:"Linux /data" -t 1:8300 /dev/sdb
 
 # Format the partitions
+echo "Creating filesystems..."
 mkfs.ext4 /dev/sda1
 mkfs.ext4 /dev/sda2
 mkfs.ext4 /dev/sda3
@@ -21,6 +41,7 @@ mkfs.ext4 /dev/sda4
 mkfs.ext4 /dev/sdb1
 
 # Mount the partitions (mount root first)
+echo "Mounting partitions..."
 mount /dev/sda2 /mnt
 mkdir -p /mnt/boot
 mount /dev/sda1 /mnt/boot
@@ -32,15 +53,18 @@ mkdir -p /mnt/data
 mount /dev/sdb1 /mnt/data
 
 # Install base system
+echo "Installing base system..."
 pacstrap -i /mnt base base-devel
 
 # Make sure disks are automounted
+echo "Generating fstab..."
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
-wget https://raw.githubusercontent.com/wesbarnett/cluster/master/install-node-part2
-chmod +x install-node-part2
-cp install-node-part2 /mnt/
+echo "Getting part 2..."
+wget https://raw.githubusercontent.com/wesbarnett/cluster/master/PART2
+chmod +x $PART2
+cp $PART2 /mnt/
 
-echo "You are now entering chroot environment. Run ./arch-install-2 to continue"
+echo "You are now entering chroot environment. Run ./$PART2 to continue"
 # Base system is installed, now change to it and run postinstall script there
 arch-chroot /mnt /bin/bash
