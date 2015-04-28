@@ -12,3 +12,5 @@ sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 
 # Enable ssh
 systemctl enable sshd
+
+useradd -m -G wheel -s /bin/bash wes
