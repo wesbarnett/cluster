@@ -182,19 +182,6 @@ pacman -q -S --noconfirm vim openssh cmake git locate zsh screen xorg-server fft
 # Update locate database
 updatedb
 
-# Setup ssh
-echo "Setting up ssh..."
-if [ "$MASTER" = true ]; then
-	sed -i -e 's/# PermitRootLogin.*/PermitRootLogin no/g' -e 's/# Banner.*/Banner /etc/issue.net/g' \
-		   -e 's/MaxStartups.*/MaxStartups 3:50:10/g' \
-		   -e 's/LoginGraceTime.*/LoginGraceTime 30/g' \
-	       -e 's/Protocol.*/Protocol 2/g' \
-           -e 's/# X11Forwarding.*/X11Forwarding yes'/etc/sshd_config
-fi
-
-# Enable ssh
-systemctl enable sshd
-
 # Enable wheel group to have sudo
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
@@ -222,6 +209,21 @@ ControlPersist 600
 SSHCONFIG
 
 done
+
+# Setup ssh
+echo "Setting up ssh..."
+if [ "$MASTER" = true ]; then
+	sed -i -e 's/# PermitRootLogin.*/PermitRootLogin no/g' -e 's/# Banner.*/Banner /etc/issue.net/g' \
+		   -e 's/MaxStartups.*/MaxStartups 3:50:10/g' \
+		   -e 's/LoginGraceTime.*/LoginGraceTime 30/g' \
+		   -e 's/AllowUsers.*/AllowUsers '$USERS'/g' \
+	       -e 's/Protocol.*/Protocol 2/g' \
+           -e 's/# X11Forwarding.*/X11Forwarding yes'/etc/sshd_config
+fi
+
+# Enable ssh
+systemctl enable sshd
+
 
 echo "Done! Restart."
 
