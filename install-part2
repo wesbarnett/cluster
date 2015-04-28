@@ -37,46 +37,11 @@ export LANG=en_US.UTF-8
 
 # Set time zone
 echo "Setting time zone..."
-ln -s /usr/share/zoneinfo/US/Central /etc/localtime
 hwclock --systohc --utc
 
 # Set hostname
 echo "Setting hostname..."
 echo $MYHOSTNAME > /etc/hostname
-
-# Sets up networking with static ip
-echo "Setting up static ip address for internal networking..."
-cat - > /etc/net-conf-$INTERFACE <<CONFIG
-address=192.168.0.$NODE
-netmask=24
-broadcast=192.168.0.255
-gateway=192.168.0.1
-CONFIG
-
-cat - > /etc/systemd/system/network@.service <<CONFIG
-[Unit]
-Description=Network connectivity (%i)
-Wants=network.target
-Before=network.target
-BindsTo=sys-subsystem-net-devices-%i.device
-After=sys-subsystem-net-devices-%i.device
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-EnvironmentFile=/etc/conf.d/net-conf-%i
-
-ExecStart=ip link set dev %i up
-ExecStart=ip addr add \${address}/\${netmask} broadcast \${broadcast} dev %i
-ExecStart=[[ -z \${gateway} ]] || { ip route add default via \${gateway} }
-
-ExecStop=ip addr flush dev %i
-ExecStop=ip route flush dev %i
-ExecStop=ip link set dev %i down
-
-[Install]
-WantedBy=multi-user.target
-CONFIG
 
 # Enable networking
 echo "Enabling internal network interface..."
@@ -189,7 +154,7 @@ else
 fi
 
 # Install some things we need
-pacman -q -S --noconfirm vim openssh cmake git locate zsh screen xorg-server fftw
+pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw
 
 # Update locate database
 updatedb
@@ -197,17 +162,6 @@ updatedb
 # Enable wheel group to have sudo
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
-
-# Setup ssh
-echo "Setting up ssh..."
-if [ "$MASTER" = true ]; then
-	sed -i -e 's/# PermitRootLogin.*/PermitRootLogin no/g' -e 's/# Banner.*/Banner /etc/issue.net/g' \
-		   -e 's/MaxStartups.*/MaxStartups 3:50:10/g' \
-		   -e 's/LoginGraceTime.*/LoginGraceTime 30/g' \
-		   -e 's/AllowUsers.*/AllowUsers '$USERS'/g' \
-	       -e 's/Protocol.*/Protocol 2/g' \
-           -e 's/# X11Forwarding.*/X11Forwarding yes'/etc/sshd_config
-fi
 
 # Enable ssh
 systemctl enable sshd
