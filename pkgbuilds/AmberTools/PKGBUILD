@@ -1,0 +1,77 @@
+# PKGBUILD template to install packmol
+# Maintainer: Hector Martinez-Seara Monne <hseara ##[at]## gmail?com>
+pkgname=AmberTools
+pkgver=14
+pkgrel=1
+pkgdesc="AmberTools"
+arch=('i686' 'x86_64')
+url="http://www.ambermd.org"
+depend=('netcdf','netcdf-cxx','netcdf-fortran')
+source=(AmberTools${pkgver}.tar.bz2)
+sha1sums=('342ddaca89369f647fe6df78895584d781719375')
+
+# Need to have already downloaded the source
+
+build() {
+  cd ${srcdir}/amber${pkgver}
+  export AMBERHOME=$(pwd)
+  ./configure -nofftw3 --with-netcdf /usr/ gnu
+  make -j 8
+}
+
+package() {
+
+  rm ${srcdir}/amber${pkgver}/bin/yacc
+
+  install -d ${pkgdir}/usr/bin
+  install -d ${pkgdir}/usr/bin/chemistry
+  install -d ${pkgdir}/usr/bin/chemistry/tinker
+  install -d ${pkgdir}/usr/bin/chemistry/amber
+  install -d ${pkgdir}/usr/bin/chemistry/amber/mdin
+  install -d ${pkgdir}/usr/bin/cpinutils
+  install -d ${pkgdir}/usr/bin/mdoutanalyzer
+  install -d ${pkgdir}/usr/bin/MMPBSA_mods
+  install -d ${pkgdir}/usr/bin/ParmedTools
+  install -d ${pkgdir}/usr/bin/ParmedTools/gui
+  install -d ${pkgdir}/usr/bin/ParmedTools/simulations
+  install -d ${pkgdir}/usr/include
+  install -d ${pkgdir}/usr/include/mtkpp
+  install -d ${pkgdir}/usr/include/mtkpp/Graph
+  install -d ${pkgdir}/usr/include/mtkpp/Diagnostics  
+  install -d ${pkgdir}/usr/include/mtkpp/GA
+  install -d ${pkgdir}/usr/include/mtkpp/Log
+  install -d ${pkgdir}/usr/include/mtkpp/Minimizers
+  install -d ${pkgdir}/usr/include/mtkpp/MM
+  install -d ${pkgdir}/usr/include/mtkpp/Molecule
+  install -d ${pkgdir}/usr/include/mtkpp/Parsers  
+  install -d ${pkgdir}/usr/include/mtkpp/Statistics
+  install -d ${pkgdir}/usr/include/mtkpp/tinyxml  
+  install -d ${pkgdir}/usr/include/mtkpp/Utils
+  install -d ${pkgdir}/usr/lib
+  install -d ${pkgdir}/usr/share
+  install -d ${pkgdir}/usr/share/info
+  install -d ${pkgdir}/usr/share/man
+
+  for folder in bin share include; do
+
+    cd ${srcdir}/amber${pkgver}/$folder
+
+    files=$(find . -type f -exec ls {} \; );
+    for file in $files; do
+      install ${srcdir}/amber14/$folder/$file ${pkgdir}/usr/$folder/$file
+    done
+  done
+
+  for folder in lib; do
+
+    cd ${srcdir}/amber${pkgver}/$folder
+
+    files=$(find . -maxdepth 1 -type f -exec ls {} \; );
+    for file in $files; do
+      install ${srcdir}/amber14/$folder/$file ${pkgdir}/usr/$folder/$file
+    done
+  done
+}
+
+
+
