@@ -5,7 +5,7 @@ set -e
 GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
 
 INTERFACE=eno1		# internal
-INTERFACE2=enp2s3	# external (on master)
+INTERFACE2=enp3s2	# external (on master)
 
 echo "Remind me: Which type of machine are you installing on?"
 select TYPE in master node; do
@@ -80,13 +80,33 @@ CONFIG
 
 # Enable networking
 echo "Enabling internal network interface..."
-systemctl enable network@$INTERFACE
-systemctl start network@$INTERFACE
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+
+ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
 if [ '$MASTER' = true ]; then
 	echo "Enabling external network interface..."
-	systemctl enable dhcpcd@$INTERFACE2
-	systemctl start dhcpcd@$INTERFACE2
+
+cat - > /etc/systemd/network/external.network <<NETCONFIG
+[Match]
+Name=$INTERFACE2
+[Network]
+DHCP=ipv4
+NETCONFIG
+
 fi
+
+cat - > /etc/systemd/network/wired.network <<NETCONFIG
+[Match]
+Name=$INTERFACE
+
+[Address]
+Address=192.168.0.$NODE
+
+[Route]
+Gateway=192.168.0.1
+NETCONFIG
 
 echo "Updating hosts..."
 cat -> /etc/hosts <<HOSTS 
@@ -123,14 +143,6 @@ pacman -q -S --noconfirm nfs-utils wget
 # Create pacman cache share
 
 if [ "$MASTER" = true ]; then
-
-	echo "Setting up firewall..."
-	pacman -q -S --noconfirm iptables
-	gpg iptables.rules.gpg
-	sed -i 's/MYINTERFACE/'$INTERFACE2'/g' iptables.rules
-	mv iptables.rules /etc/iptables/
-	systemctl start iptables.service
-	systemctl enable iptables.service
 	
 	echo "Creating shared pacman cache..."
 	mkdir -p /srv/nfs4/pacmancache
@@ -186,30 +198,6 @@ updatedb
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 
-# Add users and configure them
-echo "Adding users..."
-gpg users.txt.gpg
-newuser users.txt
-rm users.txt
-USERS=$(awk -F\: '{print $1}' users.txt)
-
-for user in $USERS; do
-
-	usermod -a -G wheel $user
-	mkdir /data/$user
-	chown -R $user:$user /data/$user
-	chage -d 0 $user
-
-	mkdir -p /home/$user/.ssh
-	cat - >  /home/$user/.ssh/config << SSHCONFIG
-Host *
-ControlMaster auto
-ControlPath ~/.ssh/controlmaster/%r@%h:%p
-ControlPersist 600
-SSHCONFIG
-
-done
-
 # Setup ssh
 echo "Setting up ssh..."
 if [ "$MASTER" = true ]; then
@@ -223,7 +211,6 @@ fi
 
 # Enable ssh
 systemctl enable sshd
-
 
 echo "Done! Restart."
 
