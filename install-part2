@@ -1,0 +1,188 @@
+#!/bin/bash
+
+set -e
+
+INTERFACE=eno1		# internal
+INTERFACE2=enp2s3	# external (on master)
+
+echo "Remind me: Which type of machine are you installing on?"
+select TYPE in master node; do
+	if [[ "$REPLY"  = 1 ]]; then
+		MYHOSTNAME=master
+		MASTER=true
+		NODE=1
+		break
+	elif [[ "$REPLY"  = 2 ]]; then
+		echo "Which node are you installing (give the number)?"
+		read NODE
+		MYHOSTNAME=node$NODE
+		MASTER=false
+		break
+	fi
+done
+
+########################
+
+# Set language
+echo "Setting locale..."
+sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /etc/locale.gen
+locale-gen
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+export LANG=en_US.UTF-8
+
+# Set time zone
+echo "Setting time zone..."
+ln -s /usr/share/zoneinfo/US/Central /etc/localtime
+hwclock --systohc --utc
+
+# Set hostname
+echo "Setting hostname..."
+echo $MYHOSTNAME > /etc/hostname
+
+# Sets up networking with static ip
+echo "Setting up static ip address for internal networking..."
+cat - > /etc/net-conf-$INTERFACE <<CONFIG
+address=192.168.0.$NODE
+netmask=24
+broadcast=192.168.0.255
+gateway=192.168.0.1
+CONFIG
+
+cat - > /etc/systemd/system/network@.service <<CONFIG
+[Unit]
+Description=Network connectivity (%i)
+Wants=network.target
+Before=network.target
+BindsTo=sys-subsystem-net-devices-%i.device
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/etc/conf.d/net-conf-%i
+
+ExecStart=ip link set dev %i up
+ExecStart=ip addr add \${address}/\${netmask} broadcast \${broadcast} dev %i
+ExecStart=[[ -z \${gateway} ]] || { ip route add default via \${gateway} }
+
+ExecStop=ip addr flush dev %i
+ExecStop=ip route flush dev %i
+ExecStop=ip link set dev %i down
+
+[Install]
+WantedBy=multi-user.target
+CONFIG
+
+# Enable networking
+echo "Enabling internal network interface..."
+systemctl enable network@$INTERFACE
+systemctl start network@$INTERFACE
+if [[ $MASTER==true ]]; then
+	echo "Enabling external network interface..."
+	systemctl enable dhcpcd@$INTERFACE2
+	systemctl start dhcpcd@$INTERFACE2
+fi
+
+# Create ramdisk environment
+echo "Creating initial ramdisk..."
+mkinitcpio -p linux
+
+# Set root password
+echo "Create root password..."
+passwd
+
+# Install a few needed things
+echo "Installing bootloader..."
+pacman -q -S --noconfirm grub
+grub-install --target=i386-pc --recheck /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
+
+pacman -q -S --noconfirm nfs-utils
+
+# Create pacman cache share
+
+if [ "$MASTER" = true ]; then
+	
+	echo "Creating shared pacman cache..."
+	mkdir -p /srv/nfs4/pacmancache
+	mount --bind /var/cache/pacman/pkg /srv/nfs4/pacmancache
+
+	echo "/var/cache/pacman/pkg /srv/nfs4/pacmancache  none   bind   0   0" >> /etc/fstab
+
+	echo "/srv/nfs4/ 192.168.1.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
+	echo "/srv/nfs4/music 192.168.1.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+
+	exportfs -rav
+
+	systemctl start rpcbind.service
+	systemctl enable rpcbind.service
+	systemctl start nfs-server.service
+	systemctl enable nfs-server.service
+
+else
+
+	systemctl start rpcbind.service
+	systemctl enable rpcbind.service
+	systemctl start nfs-server.service
+	systemctl enable nfs-server.service
+
+	echo "Going to mount master's pacman cache..."
+	read -p "Plug ethernet cable into master node. Then press any key to continue... " -n1 -s
+
+	# Setup pacman cache share mount
+	mkdir -p /mnt/pacmancache
+	echo "master:/srv/nfs4/networkcache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /etc/fstab
+
+	mount -t nfs master:/srv/nfs4/networkcache/ /var/cache/pacman/pkg
+fi
+
+# Install some things we need
+pacman -q -S --noconfirm vim openssh cmake wget git locate zsh screen xorg-server fftw
+
+# Update locate database
+updatedb
+
+# Setup ssh
+echo "Setting up ssh..."
+if [ "$MASTER" = true ]; then
+	sed -i -e 's/# PermitRootLogin.*/PermitRootLogin no/g' -e 's/# Banner.*/Banner /etc/issue.net/g' \
+		   -e 's/MaxStartups.*/MaxStartups 3:50:10/g' \
+		   -e 's/LoginGraceTime.*/LoginGraceTime 30/g' \
+	       -e 's/Protocol.*/Protocol 2/g' \
+           -e 's/# X11Forwarding.*/X11Forwarding yes'/etc/sshd_config
+fi
+
+# Enable ssh
+systemctl enable sshd
+
+# Enable wheel group to have sudo
+echo "Enabling wheel group in sudoers..."
+sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+
+# Add users and configure them
+echo "Adding users..."
+gpg users.txt.gpg
+newuser users.txt
+rm users.txt
+USERS=$(awk -F\: '{print $1}' users.txt)
+
+for user in $USERS; do
+
+	usermod -a -G wheel $user
+	mkdir /data/$user
+	chown -R $user:$user /data/$user
+	chage -d 0 $user
+
+	mkdir -p /home/$user/.ssh
+	cat - >  /home/$user/.ssh/config << SSHCONFIG
+Host *
+ControlMaster auto
+ControlPath ~/.ssh/controlmaster/%r@%h:%p
+ControlPersist 600
+SSHCONFIG
+
+done
+
+echo "Done! Restart."
+
+exit
