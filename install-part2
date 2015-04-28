@@ -139,12 +139,7 @@ else
 	systemctl enable rpcbind.service
 	systemctl enable nfs-server.service
 
-	echo "Going to mount master's pacman cache..."
-	read -p "Plug ethernet cable into master node. Then press any key to continue... " -n1 -s
-
-	# Setup pacman cache share mount
-	mkdir -p /mnt/pacmancache
-	echo "master:/srv/nfs4/networkcache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /etc/fstab
+	echo "master:/srv/nfs4/pacmancache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /etc/fstab
 fi
 
 GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
