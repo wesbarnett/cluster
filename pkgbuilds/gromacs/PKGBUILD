@@ -1,5 +1,4 @@
-# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
-# Not for use in AUR
+# James W. Barnett <jbarnet4@tulane.edu>
 pkgname=gromacs
 pkgver=5.0.4
 pkgrel=4

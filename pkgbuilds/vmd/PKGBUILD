@@ -1,5 +1,4 @@
-# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
-# Not for use in AUR
+# James W. Barnett <jbarnet4@tulane.edu>
 pkgname=vmd
 pkgver=1.9.2
 pkgrel=1

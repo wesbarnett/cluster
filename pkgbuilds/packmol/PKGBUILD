@@ -1,5 +1,4 @@
-# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
-# Not for use in AUR
+# James W. Barnett <jbarnet4@tulane.edu>
 pkgname=packmol
 pkgver=14.225
 pkgrel=1
