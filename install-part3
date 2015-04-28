@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Install some things we need
+pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw
+
+# Update locate database
+updatedb
+
+# Enable wheel group to have sudo
+echo "Enabling wheel group in sudoers..."
+sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+
+# Enable ssh
+systemctl enable sshd

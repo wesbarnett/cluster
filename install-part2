@@ -120,9 +120,7 @@ if [ "$MASTER" = true ]; then
 
 	exportfs -rav
 
-	systemctl start rpcbind.service
 	systemctl enable rpcbind.service
-	systemctl start nfs-server.service
 	systemctl enable nfs-server.service
 
 else
@@ -138,9 +136,7 @@ else
 
 	exportfs -rav
 
-	systemctl start rpcbind.service
 	systemctl enable rpcbind.service
-	systemctl start nfs-server.service
 	systemctl enable nfs-server.service
 
 	echo "Going to mount master's pacman cache..."
@@ -149,23 +145,12 @@ else
 	# Setup pacman cache share mount
 	mkdir -p /mnt/pacmancache
 	echo "master:/srv/nfs4/networkcache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /etc/fstab
-
-	mount -t nfs master:/srv/nfs4/networkcache/ /var/cache/pacman/pkg
 fi
 
-# Install some things we need
-pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw
-
-# Update locate database
-updatedb
-
-# Enable wheel group to have sudo
-echo "Enabling wheel group in sudoers..."
-sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
-
-# Enable ssh
-systemctl enable sshd
-
-echo "Done! Restart."
+GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
+PART3=install-part3
+wget $GITHUB/$PART3
+chmod +x install-part3
+echo "Restart and run part3."
 
 exit
