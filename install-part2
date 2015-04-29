@@ -122,12 +122,16 @@ else
 
 	echo "Creating home directory export..."
 	mkdir -p /srv/nfs4/home
+	mkdir -p /srv/nfs4/data
 
 	mount --bind /home /srv/nfs4/home
+	mount --bind /home /srv/nfs4/data
 	echo "/home /srv/nfs4/home  none   bind   0   0" >> /etc/fstab
+    echo "/data /srv/nfs4/data  none   bind   0   0" >> /etc/fstab
 
 	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
 	echo "/srv/nfs4/home 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+	echo "/srv/nfs4/data 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
 
 	exportfs -rav
 
