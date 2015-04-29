@@ -13,19 +13,30 @@ source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
 sha1sums=('faeeab8486475b26bede1ab4ff762f23cd973b1e')
 
 build() {
-  mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}/singlebuild
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}/mpibuild
+  cd ${srcdir}/${pkgname}-${pkgver}/singlebuild
   # NOTE: for whatever reason you have to do this part manually
   #cmake .. \
-  #      -DCMAKE_INSTALL_PREFIX=/usr
-  make
+  #       -DCMAKE_INSTALL_PREFIX=/usr
+  make -j 8
+
+  cd ${srcdir}/${pkgname}-${pkgver}/mpibuild
+  #cmake .. \
+  #       -DCMAKE_INSTALL_PREFIX=/usr \
+  #       -DGMX_MPI=ON
+  make -j 8
 }
 
 package() {
 
   msg2 "Making the single precision executables"
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}/singlebuild
   make DESTDIR=${pkgdir} install
+
+  cd ${srcdir}/${pkgname}-${pkgver}/mpibuild
+  make DESTDIR=${pkgdir} install
+
   mv ${pkgdir}/usr/lib64 ${pkgdir}/usr/lib
 
   msg2 "Installing completion and environment setup script"
