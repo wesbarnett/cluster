@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Put this in the same directory with the packages you've built to batch install
+# them
+
+packages=$(ls)
+for pack in $packages; do
+    sudo pacman -U -q --noconfirm $pack
+done
