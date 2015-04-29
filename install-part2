@@ -13,9 +13,6 @@ select TYPE in master node; do
 		MYHOSTNAME=master
 		MASTER=true
 		NODE=1
-		pacman -q -S --noconfirm wget
-		wget $GITHUB/iptables.rules.gpg
-		wget $GITHUB/users.txt.gpg
 		break
 	elif [[ "$REPLY"  = 2 ]]; then
 		echo "Which node are you installing (give the number)?"

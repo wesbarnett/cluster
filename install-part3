@@ -2,8 +2,22 @@
 
 set -e
 
+password=XXXXX          # default password
+users=USER1 USER2 USER3 # users to add
+
+echo "Remind me just one more time: Which type of machine are you installing on?"
+select TYPE in master node; do
+	if [[ "$REPLY"  = 1 ]]; then
+        MASTER=true
+		break
+	elif [[ "$REPLY"  = 2 ]]; then
+		MASTER=false
+		break
+	fi
+done
+
 # Install some things we need
-pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw
+pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw xorg-xauth
 
 # Update locate database
 updatedb
@@ -12,11 +26,96 @@ updatedb
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 
-# Enable ssh
-systemctl enable sshd
-
 rm /etc/resolv.conf
 ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
-useradd -m -G wheel -s /bin/bash wes
+useradd -m -G wheel -s /bin/zsh wes
 passwd wes
+
+# Add users and configure them
+echo "Adding users..."
+
+for user in $users; do
+	useradd -m -G wheel -s /bin/bash $user
+	mkdir /data/$user
+	chown -R $user:$user /data/$user
+	echo $user:$password | chpasswd
+	chage -d 0 $user
+done
+
+#/bin/bash
+echo "Setting up firewall..."
+pacman -q -S --noconfirm iptables
+mv iptables.rules /etc/iptables/
+
+cat - > /etc/iptables/iptables.rules <<RULES
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -i eno1 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A FORWARD -p icmp -j ACCEPT
+-A FORWARD -i lo -j ACCEPT
+-A FORWARD -i em1 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+RULES
+
+systemctl start iptables.service
+systemctl enable iptables.service
+
+if [ "$MASTER" = true ]; then
+
+cat - > /etc/ssh/sshd_config <<SSHCONFIG
+Protocol 2
+LoginGraceTime 30s
+PermitRootLogin no
+AuthorizedKeysFile  .ssh/authorized_keys
+ChallengeResponseAuthentication no
+UsePAM yes
+AllowTcpForwarding yes
+X11Forwarding yes
+X11DisplayOffset 10
+X11UseLocalhost yes
+PrintMotd no # pam does that
+UsePrivilegeSeparation sandbox      # Default for new installations.
+Banner /etc/issue.net
+Subsystem   sftp    /usr/lib/ssh/sftp-server
+SSHCONFIG
+
+cat - > /etc/ssh/sshd_config <<SSHCONFIG
+ForwardX11 yes
+ForwardX11Trusted yes
+
+Host *.loni.org
+    ControlMaster auto
+    ControlPath /tmp/%r@%h:%p
+    ControlPersist 600
+SSHCONFIG
+
+else
+
+cat - > /etc/ssh/sshd_config <<SSHCONFIG
+AuthorizedKeysFile  .ssh/authorized_keys
+ChallengeResponseAuthentication no
+UsePAM yes
+AllowTcpForwarding yes
+X11Forwarding yes
+X11DisplayOffset 10
+X11UseLocalhost yes
+UsePrivilegeSeparation sandbox      # Default for new installations.
+Subsystem   sftp    /usr/lib/ssh/sftp-server
+SSHCONFIG
+
+fi
+
+# Enable ssh
+systemctl enable sshd
+
+echo "Finished!. Probably should reboot one more time."
