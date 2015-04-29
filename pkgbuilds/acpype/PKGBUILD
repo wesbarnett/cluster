@@ -1,0 +1,22 @@
+# James W. Barnett <jbarnet4@tulane.edu>
+pkgname=acpype
+pkgver=2015.04.29
+pkgrel=1
+pkgdesc='AnteChamber PYthon Parser interfacE'
+url='https://code.google.com/p/acpype/'
+license=("GPL")
+arch=('i686' 'x86_64')
+depends=('python2')
+optdepends=('openbabel')
+source=(http://svn.code.sf.net/p/ccpn/code/branches/stable/ccpn/python/acpype/acpype.py)
+sha1sums=('550d1a6d8bd661ae3a645977b77394f5077ddd5b')
+
+build() {
+  chmod +x ${srcdir}/acpype.py
+}
+
+package() {
+  install -d ${pkgdir}/usr/bin
+  install ${srcdir}/acpype.py ${pkgdir}/usr/bin/acpype
+
+}
