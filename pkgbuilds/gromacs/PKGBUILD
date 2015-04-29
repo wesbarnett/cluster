@@ -13,17 +13,18 @@ source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
 sha1sums=('faeeab8486475b26bede1ab4ff762f23cd973b1e')
 
 build() {
-  mkdir -p ${srcdir}/single/${pkgname}-${pkgver}/build
-  cd ${srcdir}/single/${pkgname}-${pkgver}/build
-  cmake .. \
-        -DCMAKE_INSTALL_PREFIX=/usr
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
+  # NOTE: for whatever reason you have to do this part manually
+  #cmake .. \
+  #      -DCMAKE_INSTALL_PREFIX=/usr
   make
 }
 
 package() {
 
   msg2 "Making the single precision executables"
-  cd ${srcdir}/single/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   make DESTDIR=${pkgdir} install
   mv ${pkgdir}/usr/lib64 ${pkgdir}/usr/lib
 
