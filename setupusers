@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Add users and configure them with a default password (change below)
+# To do this on every node simply create a for loop that copies this script,
+# then do "ssh node$i ./setupusers" to run on that node in the loop
+
+echo "Adding users..."
+password=XXXXXXXXXXXXXXXXXXX
+users="USER1 USER2 USER3 USER3"
+
+for user in $users; do
+
+	useradd -m -G wheel -s /bin/bash $user
+	mkdir /data/$user
+	chown -R $user:$user /data/$user
+	echo $user:$password | chpasswd
+	chage -d 0 $user
+
+done
+
