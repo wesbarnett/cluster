@@ -4,6 +4,7 @@ set -e
 
 password=XXXXX          # default password
 users=USER1 USER2 USER3 # users to add
+myuser=wes
 
 echo "Remind me just one more time: Which type of machine are you installing on?"
 select TYPE in master node; do
@@ -26,13 +27,16 @@ updatedb
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 
-useradd -m -G wheel -s /bin/zsh wes
+echo "Adding personal user..."
+useradd -m -G wheel -s /bin/zsh $myuser
+echo "Enter your user password..."
 passwd wes
 
 # Add users and configure them
-echo "Adding users..."
+echo "Adding other users..."
 
 for user in $users; do
+    echo "Adding $user..."
 	useradd -m -G wheel -s /bin/bash $user
 	mkdir /data/$user
 	chown -R $user:$user /data/$user
@@ -80,6 +84,7 @@ systemctl start iptables.service
 systemctl enable iptables.service
 
 
+echo "Setting up ssh..."
 cat - > /etc/ssh/sshd_config <<SSHCONFIG
 Protocol 2
 LoginGraceTime 30s
@@ -128,7 +133,8 @@ systemctl enable sshd
 
 # Add domain name server caching on the master node
 if [ "$MASTER" = true ]; then
-pacman -S pdnsd
+echo "Setting up DNS cache server..."
+pacman -S -q --no-confirm pdnsd
 cat - > /etc/pdnsd.conf <<DNSCONFIG
 global {
 	perm_cache=1024;
@@ -174,6 +180,8 @@ rm /etc/resolv.conf
 ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
 else
+
+echo "Pointing to master node for DNS..."
 
 rm /etc/resolv.conf
 echo "nameserver 192.168.0.1 > /etc/resolv.conf"
