@@ -26,9 +26,6 @@ updatedb
 echo "Enabling wheel group in sudoers..."
 sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
 
-rm /etc/resolv.conf
-ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
-
 useradd -m -G wheel -s /bin/zsh wes
 passwd wes
 
@@ -128,5 +125,59 @@ fi
 
 # Enable ssh
 systemctl enable sshd
+
+# Add domain name server caching on the master node
+if [ "$MASTER" = true ]; then
+pacman -S pdnsd
+cat - > /etc/pdnsd.conf <<DNSCONFIG
+global {
+	perm_cache=1024;
+	cache_dir="/var/cache/pdnsd";
+	run_as="pdnsd";
+	server_ip = 192.168.0.1;
+	status_ctl = on;
+	query_method=udp_tcp;
+	min_ttl=15m;
+	max_ttl=1w;
+	timeout=10;
+	neg_domain_pol=on;
+	udpbufsize=1024;
+}
+
+server {
+	label= "Google DNS";
+	ip = 8.8.8.8, 8.8.4.4;
+	timeout=4;
+	uptest=if;
+	interface=enp3s2;
+	interval=10m;
+	purge_cache=off;
+	edns_query=yes;
+}
+
+source {
+	owner=localhost;
+	file="/etc/hosts";
+}
+
+
+rr {
+	name=localhost;
+	reverse=on;
+	a=127.0.0.1;
+	owner=localhost;
+	soa=localhost,root.localhost,42,86400,900,86400,86400;
+}
+DNSCONFIG
+
+rm /etc/resolv.conf
+ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+else
+
+rm /etc/resolv.conf
+echo "nameserver 192.168.0.1 > /etc/resolv.conf"
+
+fi
 
 echo "Finished!. Probably should reboot one more time."
