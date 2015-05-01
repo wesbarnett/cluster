@@ -53,9 +53,9 @@ cat - > /etc/systemd/network/external.network <<NETCONFIG
 Name=$INTERFACE2
 [Network]
 DHCP=ipv4
+IPForward=yes
 NETCONFIG
 
-fi
 
 cat - > /etc/systemd/network/wired.network <<NETCONFIG
 [Match]
@@ -63,10 +63,27 @@ Name=$INTERFACE
 
 [Address]
 Address=192.168.0.$NODE
-
-[Route]
 Gateway=192.168.0.1
+IPForward=yes
+IPMasquerade=yes
+
 NETCONFIG
+
+else
+
+cat - > /etc/systemd/network/wired.network <<NETCONFIG
+[Match]
+Name=$INTERFACE
+
+[Address]
+Address=192.168.0.$NODE
+Gateway=192.168.0.1
+IPForward=yes
+IPMasquerade=yes
+
+NETCONFIG
+
+fi
 
 echo "Updating hosts..."
 cat -> /etc/hosts <<HOSTS 
