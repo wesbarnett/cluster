@@ -26,7 +26,7 @@ Or with a URL shortener:
 
     wget http://bit.ly/tulane-install
 
-# install
+### install
 
 First make the script executable. If you used the URL shortener then the script
 will be named `tulane-install` instead of just `install`. Then run the script in
@@ -42,7 +42,7 @@ This script:
 * Grabs part 2, makes it executable, and puts it in /mnt
 * Switches to chroot environment
 
-# install-part2
+### install-part2
 
 After you are in the chroot environment you should see the second script. Run
 the script.
@@ -67,7 +67,7 @@ with the nodes. Also the home directories on the nodes will be shared with the
 master.
 * Downloads part 3, and makes executable.
 
-# install-part3
+### install-part3
 
 After part2 is down, you plug the ethernet cable of the node (if not on master)
 into the internal switch now, since the packages can be retrieved from the
