@@ -199,4 +199,9 @@ systemctl restart systemd-resolved
 # Sync time
 timedatectl set-ntp true 
 
+# Update microcode
+echo "Getting updated Intel microcode..."
+pacman -S intel-ucode
+grub-mkconfig -o /boot/grub/grub.cfg
+
 echo "Finished!. Probably should reboot one more time."
