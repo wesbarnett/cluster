@@ -45,8 +45,8 @@ for user in $users; do
 done
 
 #/bin/bash
-echo "Setting up firewall..."
-pacman -q -S --noconfirm iptables
+echo "Setting up firewall and sshguard..."
+pacman -q -S --noconfirm iptables sshguard
 
 if [ "$MASTER" = true ]; then
 
@@ -77,11 +77,16 @@ COMMIT
 -A FORWARD -i eno1 -o enp3s2 -j ACCEPT
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-N sshguard
+-A INPUT -p tcp --dport 22 -j sshguard
 COMMIT
 RULES
 
+touch /etc/iptables/ip6tables.rules
 systemctl start iptables.service
 systemctl enable iptables.service
+systemctl start sshguard.service
+systemctl enable sshguard.service
 
 
 echo "Setting up ssh..."
