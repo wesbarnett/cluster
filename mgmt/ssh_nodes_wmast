@@ -1,0 +1,42 @@
+#!/bin/zsh
+ 
+# James W. Barnett <jbarnet4@tulane.edu>
+
+# Script for creating tmux session with window panes connected to each node
+# (very similar to 'clusterssh' program without all of the dependencies, and you
+# don't need an X server.  Input is synchronized, so you type one command in,
+# and it is entered on every node. Assumes nodes are in /etc/hosts as node2,
+# node3, etc.
+#
+# This is a variation which also has a window on the master node open
+
+NNODES=12
+
+################################
+
+which tmux 2>/dev/null 1>&2
+
+if [[ $? -eq 1 ]]; then
+    echo "tmux was not found, and is required. Install tmux before running"
+    echo "again." 
+    exit
+fi
+
+tmux has-session -t "clusterssh"
+if [[ $? -eq 0 ]]; then
+    echo "A cluster management session already exists! You should attached to"
+    echo "that one first, or rename it, before proceeding." 
+    exit
+fi
+
+cd
+tmux new-session -s "clusterssh" -d 2>/dev/null 1>&2
+
+for i in {2..$NNODES}; do
+    tmux split-window -t "clusterssh" -d 'ssh node'$i'' 2>/dev/null 1>&2
+    tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
+done
+
+tmux set-window-option synchronize-panes on 2>/dev/null 1>&2
+
+tmux attach
