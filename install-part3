@@ -29,14 +29,42 @@ pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server ff
 # Update locate database
 updatedb
 
-# Enable wheel group to have sudo
+# Allow all users in wheel group to shutdown system, mount drives, and kill process
+# Admin users can do the above, plus systemd, pacman, and firewall
+
 echo "Enabling wheel group in sudoers..."
-sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' /etc/sudoers
+cat -> /etc/sudoers <<SUDOFILE
+## sudoers file.
+##
+## This file MUST be edited with the 'visudo' command as root.
+## Failure to use 'visudo' may result in syntax or file permission errors
+## that prevent sudo from running.
+##
+## See the sudoers man page for the details on how to write a sudoers file.
+##
+
+Cmnd_Alias  POWER    = /sbin/halt, /sbin/reboot, /sbin/poweroff, /usr/bin/shutdown
+Cmnd_Alias  KILL     = /usr/bin/kill, /usr/bin/killall
+Cmnd_Alias  STORAGE  = /usr/bin/mount, /usr/bin/umount
+Cmnd_Alias  SYSTEMD  = /usr/bin/journalctl, /usr/bin/systemctl
+Cmnd_Alias  PKGMAN   = /usr/bin/pacman
+Cmnd_Alias  FIREWALL = /usr/bin/iptables, /usr/bin/ip6tables
+Cmnd_Alias  USERS    = /usr/bin/useradd, /usr/bin/usermod, /usr/bin/groupadd, /user/bin/groupdel
+
+root ALL=(ALL) ALL
+%admin ALL=(root) POWER, STORAGE, KILL, SYSTEMD, PKGMAN, FIREWALL, USERS
+%wheel ALL=(root) POWER, STORAGE, KILL
+SUDOFILE
+
+## (the '#' here does not indicate a comment)
+#includedir /etc/sudoers.d
 
 echo "Adding personal user..."
 useradd -m -G wheel -s /bin/zsh $myuser
+groupadd admin
+usermod -aG admin $myuser
 echo "Enter your user password..."
-passwd wes
+passwd $myuser
 
 # Add users and configure them
 echo "Adding other users..."
