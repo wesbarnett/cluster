@@ -204,4 +204,13 @@ echo "Getting updated Intel microcode..."
 pacman -S intel-ucode
 grub-mkconfig -o /boot/grub/grub.cfg
 
+# Add automatic timeout for virtual consoles (not terminal emulators)
+cat -> /etc/profile.d/shell-timeout.sh <<TMOUTSETUP
+TMOUT="\$(( 60*10 ))";
+[ -z "\$DISPLAY" ] && export TMOUT;
+case \$( /usr/bin/tty ) in
+        /dev/tty[0-9]*) export TMOUT;;
+esac
+TMOUTSETUP
+
 echo "Finished!. Probably should reboot one more time."
