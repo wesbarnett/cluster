@@ -6,6 +6,12 @@ password=XXXXX          # default password
 users=USER1 USER2 USER3 # users to add
 myuser=wes
 
+NOIPUSER=
+NOIPPASS=
+NOIPDOMAIN=
+
+##########################################
+
 echo "Remind me just one more time: Which type of machine are you installing on?"
 select TYPE in master node; do
 	if [[ "$REPLY"  = 1 ]]; then
@@ -212,5 +218,26 @@ case \$( /usr/bin/tty ) in
         /dev/tty[0-9]*) export TMOUT;;
 esac
 TMOUTSETUP
+
+pacman -S --no-confirm -q ddclient
+
+echo "Setting up ddclient..."
+cat -> /etc/ddclient/ddclient.conf <<DDCLIENTCONF
+daemon=300
+syslog=yes
+mail=root
+mail-failure=root
+pid=/var/run/ddclient.pid
+ssl=yes
+use=web, web=checkip.dyndns.org/, web-skip='IP Address'
+protocol=dyndns2
+server=dynupdate.no-ip.com
+login=$NOIPUSER
+password=$NOIPPASS
+$NOIPDOMAIN
+DDCLIENTCONF
+
+systemctl start ddclient
+systemctl enable ddclient
 
 echo "Finished!. Probably should reboot one more time."

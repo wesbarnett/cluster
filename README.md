@@ -100,6 +100,11 @@ to change the default password and user names at the beginning of the script.
   update](https://wiki.archlinux.org/index.php/Microcode).
 * Enables
   [auto-logout](https://wiki.archlinux.org/index.php/Security#Automatic_logout) for virtual consoles.
+* Adds [ddclient to do dynamic
+  DNS](https://wiki.archlinux.org/index.php/Dynamic_DNS) for the system with
+  [no-ip.com](azathoth.ddns.net). You'll need to
+  set the user, password, and domain in the script before running, or change the
+configuration file afterwards.
 
 ## Pkgbuilds
 
