@@ -1,0 +1,9 @@
+acpype 2015.04.29-1
+ambertools 14-1
+archey r145.bb8d4a3-1
+dircolors-solarized-git r132.704b2fe-1
+gromacs 5.0.4-4
+liquidprompt-git v.1.9.r6.gdbe3c15-2
+packmol 14.225-1
+systemd-timer-pacman-optimize-git 1.0.1-1
+vmd 1.9.2-1
