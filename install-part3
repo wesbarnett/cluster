@@ -24,10 +24,13 @@ select TYPE in master node; do
 done
 
 # Install some things we need
-pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw xorg-xauth
+pacman -q -S --noconfirm vim openssh cmake git mlocate zsh screen xorg-server fftw xorg-xauth pkgfile
 
 # Update locate database
 updatedb
+
+# Update pkgfile database
+pkgfile --update
 
 # Allow all users in wheel group to shutdown system, mount drives, and kill process
 # Admin users can do the above, plus systemd, pacman, and firewall
@@ -47,7 +50,7 @@ Cmnd_Alias  POWER    = /sbin/halt, /sbin/reboot, /sbin/poweroff, /usr/bin/shutdo
 Cmnd_Alias  KILL     = /usr/bin/kill, /usr/bin/killall
 Cmnd_Alias  STORAGE  = /usr/bin/mount, /usr/bin/umount
 Cmnd_Alias  SYSTEMD  = /usr/bin/journalctl, /usr/bin/systemctl
-Cmnd_Alias  PKGMAN   = /usr/bin/pacman
+Cmnd_Alias  PKGMAN   = /usr/bin/pacman, /usr/bin/pkgfile
 Cmnd_Alias  FIREWALL = /usr/bin/iptables, /usr/bin/ip6tables
 Cmnd_Alias  USERS    = /usr/bin/useradd, /usr/bin/usermod, /usr/bin/groupadd, /user/bin/groupdel
 
