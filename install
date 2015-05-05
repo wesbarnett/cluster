@@ -1,5 +1,8 @@
 #!/bin/bash
-# Arch install script for cluster node
+# Arch install script for cluster nod
+
+# TODO: Use old node for new master, load up large HD's on it and make it NAS.
+# Smaller storage for nodes.
 
 GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
 PART2=install-part2
@@ -16,9 +19,6 @@ select TYPE in master node; do
 		break
 	fi
 done
-
-# TODO: in future use RAID-5 with 3 disks
-# or could possibly use LVM to make this more seamless
 
 # Partition the disks
 echo "Partitioning /dev/sda..."
