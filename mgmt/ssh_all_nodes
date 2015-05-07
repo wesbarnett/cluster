@@ -34,6 +34,9 @@ for i in {3..$NNODES}; do
     tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 done
 
+tmux split-window -t "clusterssh" -d 'ssh nas1' 2>/dev/null 1>&2
+tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
+
 tmux set-window-option synchronize-panes on 2>/dev/null 1>&2
 
 tmux attach

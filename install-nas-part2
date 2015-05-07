@@ -1,0 +1,100 @@
+#!/bin/bash
+
+set -e
+
+MYHOSTNAME=nas1
+NODE=100
+GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
+PART3=install-nas-part3
+INTERFACE=enp3s2
+
+########################
+
+# Set language
+echo "Setting locale..."
+sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /etc/locale.gen
+locale-gen
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+export LANG=en_US.UTF-8
+
+# Set time zone
+echo "Setting time zone..."
+ln -s /usr/share/zoneinfo/US/Central /etc/localtime
+hwclock --systohc --utc
+
+# Set hostname
+echo "Setting hostname..."
+echo $MYHOSTNAME > /etc/hostname
+
+# Enable networking
+echo "Enabling internal network interface..."
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+
+cat - > /etc/systemd/network/wired.network <<NETCONFIG
+[Match]
+Name=$INTERFACE
+
+[Address]
+Address=192.168.0.$NODE
+
+[Route]
+Gateway=192.168.0.1
+
+NETCONFIG
+
+echo "Updating hosts..."
+cat -> /etc/hosts <<HOSTS 
+192.168.0.1	master
+192.168.0.2	node2
+192.168.0.3	node3
+192.168.0.4	node4
+192.168.0.5	node5
+192.168.0.6	node6
+192.168.0.7	node7
+192.168.0.8	node8
+192.168.0.9	node9
+192.168.0.10	node10
+192.168.0.11	node11
+192.168.0.12	node12
+HOSTS
+
+# Create ramdisk environment
+echo "Creating initial ramdisk..."
+mkinitcpio -p linux
+
+# Set root password
+echo "Create root password..."
+passwd
+
+# Install a few needed things
+echo "Installing bootloader..."
+pacman -q -S --noconfirm syslinux
+
+pacman -q -S --noconfirm nfs-utils wget
+
+# Create pacman cache share
+
+echo "Creating home directory export..."
+mkdir -p /srv/nfs4/home
+
+mount --bind /home /srv/nfs4/home
+echo "/home /srv/nfs4/home  none   bind   0   0" >> /etc/fstab
+
+echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /etc/exports
+echo "/srv/nfs4/home 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /etc/exports
+
+exportfs -rav
+
+systemctl enable rpcbind.service
+systemctl enable nfs-server.service
+
+echo "master:/srv/nfs4/pacmancache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /etc/fstab
+
+GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
+wget $GITHUB/$PART3
+chmod +x install-part3
+mv install-part3 /root/
+echo "Plug ethernet cable into network switch. Restart and run part3."
+
+exit
