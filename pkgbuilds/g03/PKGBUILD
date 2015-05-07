@@ -1,0 +1,40 @@
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+pkgname=g03
+pkgver=1
+pkgrel=1
+pkgdesc="Gaussian 03"
+license=('GPL')
+arch=('i686' 'x86_64')
+url="http://www.gaussian.com"
+depends=('lib32-gcc-libs')
+source=(g03.tar.gz)
+sha1sums=('e9c4ad40ae58d8234a858713c009d887a74c644b')
+
+# Need to have already downloaded the source
+
+package() {
+
+  cd ${srcdir}/..
+  install -d ${pkgdir}/etc/
+  install -d ${pkgdir}/etc/profile.d
+  install g03.sh ${pkgdir}/etc/profile.d/
+  install -d ${pkgdir}/usr/local/g03
+
+  cd ${srcdir}/g03
+  directories=$(find -type d)
+
+  for dir in $directories; do
+      install -d ${pkgdir}/usr/local/g03/$dir
+  done
+
+  files=$(find -type f)
+  for file in $files; do
+      install $file ${pkgdir}/usr/local/g03/$file
+  done
+
+  export g03root=/usr/local
+
+}
+
+
+
