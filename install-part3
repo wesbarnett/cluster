@@ -57,10 +57,9 @@ Cmnd_Alias  USERS    = /usr/bin/useradd, /usr/bin/usermod, /usr/bin/groupadd, /u
 root ALL=(ALL) ALL
 %admin ALL=(root) POWER, STORAGE, KILL, SYSTEMD, PKGMAN, FIREWALL, USERS
 %wheel ALL=(root) POWER, STORAGE, KILL
-SUDOFILE
-
 ## (the '#' here does not indicate a comment)
 #includedir /etc/sudoers.d
+SUDOFILE
 
 echo "Changing root shell to zsh..."
 chsh -s /usr/bin/zsh
@@ -95,30 +94,35 @@ echo "net.ipv4.ip_forward=1" >> /etc/systctl.d/99-sysctl.conf
 echo "IPTABLES_FORWARD=1" >> /etc/conf.d/iptables
 
 cat - > /etc/iptables/iptables.rules <<RULES
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+:sshguard - [0:0]
+-A INPUT -m comment --comment "000 accept established traffic" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i lo -m comment --comment "001 accept loopback device" -j ACCEPT
+-A INPUT -i eno1 -m comment --comment "002 accept traffic on trusted eno1 (within cluster)" -j ACCEPT
+-A INPUT -m comment --comment "003 drop traffic with invalid headers or checksums" -m conntrack --ctstate INVALID -j DROP
+-A INPUT -p icmp -m comment --comment "004 accept all echo requests" -m conntrack --ctstate NEW -m icmp --icmp-type 8 -j ACCEPT
+-A INPUT -p tcp -m comment --comment "005 send ssh traffic to sshguard" -j sshguard
+-A INPUT -p tcp -m multiport --dports 22 -m comment --comment "006 accept ssh traffic" -j ACCEPT
+-A INPUT -p udp -m comment --comment "007 if port is not open, reject" -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p tcp -m comment --comment "008 reject tcp-reset packets" -j REJECT --reject-with tcp-reset
+-A INPUT -m comment --comment "009 reject all other traffic with unreachable message" -j REJECT --reject-with icmp-proto-unreachable
+-A INPUT -m comment --comment "998 drop all INPUT by default" -j DROP
+-A FORWARD -m comment --comment "010 established forwarded traffic is allowed" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -p icmp -m comment --comment "011 accept all forwared icmp traffic" -j ACCEPT
+-A FORWARD -i lo -m comment --comment "012 accept all forwarded loopback traffic" -j ACCEPT
+-A FORWARD -i eno1 -o enp3s2 -m comment --comment "013 accept all traffic from cluster to outside" -j ACCEPT
+-A FORWARD -m comment --comment "014 reject all traffic with unreachable message" -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -m comment --comment "999 drop all FORWARD by default" -j DROP
+COMMIT
 *nat
 :PREROUTING ACCEPT [0:0]
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A POSTROUTING -s 192.168.0.0/24 -o enp3s2 -j MASQUERADE
-COMMIT
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -i eno1 -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
--A FORWARD -p icmp -j ACCEPT
--A FORWARD -i lo -j ACCEPT
--A FORWARD -i eno1 -o enp3s2 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
--N sshguard
--A INPUT -p tcp --dport 22 -j sshguard
+-A POSTROUTING -s 192.168.0.0/24 -o enp3s2 -m comment --comment "015 masquerade all cluster traffic as coming from master" -j MASQUERADE
 COMMIT
 RULES
 
@@ -131,44 +135,187 @@ systemctl enable sshguard.service
 
 echo "Setting up ssh..."
 cat - > /etc/ssh/sshd_config <<SSHCONFIG
+#	$OpenBSD: sshd_config,v 1.94 2015/02/02 01:57:44 deraadt Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# The default requires explicit activation of protocol 1
 Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /etc/ssh/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_dsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+#HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 1024
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
 LoginGraceTime 30s
 PermitRootLogin no
-AuthorizedKeysFile  .ssh/authorized_keys
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
+
+# The default is to check both .ssh/authorized_keys and .ssh/authorized_keys2
+# but this is overridden so installations will only check .ssh/authorized_keys
+AuthorizedKeysFile	.ssh/authorized_keys
+
+#AuthorizedPrincipalsFile none
+
+#AuthorizedKeysCommand none
+#AuthorizedKeysCommandUser nobody
+
+# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+#RhostsRSAAuthentication no
+# similar for protocol version 2
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# RhostsRSAAuthentication and HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# Change to no to disable s/key passwords
 ChallengeResponseAuthentication no
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
 UsePAM yes
+
+#AllowAgentForwarding yes
 AllowTcpForwarding yes
+#GatewayPorts no
 X11Forwarding yes
 X11DisplayOffset 10
 X11UseLocalhost yes
+#PermitTTY yes
 PrintMotd no # pam does that
-UsePrivilegeSeparation sandbox      # Default for new installations.
+#PrintLastLog yes
+#TCPKeepAlive yes
+#UseLogin no
+UsePrivilegeSeparation sandbox		# Default for new installations.
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
+#PidFile /run/sshd.pid
+#MaxStartups 10:30:100
+#PermitTunnel no
+#ChrootDirectory none
+#VersionAddendum none
+
 Banner /etc/issue.net
-Subsystem   sftp    /usr/lib/ssh/sftp-server
-SSHCONFIG
 
-cat - > /etc/ssh/sshd_config <<SSHCONFIG
-ForwardX11 yes
-ForwardX11Trusted yes
+# override default of no subsystems
+Subsystem	sftp	/usr/lib/ssh/sftp-server
 
-Host *.loni.org
-    ControlMaster auto
-    ControlPath /tmp/%r@%h:%p
-    ControlPersist 600
 SSHCONFIG
 
 else
 
 cat - > /etc/ssh/sshd_config <<SSHCONFIG
-AuthorizedKeysFile  .ssh/authorized_keys
-ChallengeResponseAuthentication no
-UsePAM yes
-AllowTcpForwarding yes
-X11Forwarding yes
-X11DisplayOffset 10
-X11UseLocalhost yes
-UsePrivilegeSeparation sandbox      # Default for new installations.
-Subsystem   sftp    /usr/lib/ssh/sftp-server
+#	$OpenBSD: sshd_config,v 1.94 2015/02/02 01:57:44 deraadt Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# The default requires explicit activation of protocol 1
+#Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /etc/ssh/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_dsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+#HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 1024
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+#LoginGraceTime 2m
+#PermitRootLogin yes
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
 SSHCONFIG
 
 fi
