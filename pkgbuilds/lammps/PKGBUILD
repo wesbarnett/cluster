@@ -1,0 +1,38 @@
+# Maintainer: James Barnett
+pkgname=lammps  
+pkgver=11May2015
+pkgrel=1 
+pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
+url="http://lammps.sandia.gov/"
+arch=('i686' 'x86_64')
+license=('GPL')
+depends=('fftw' 'openmpi')
+makedepends=()
+source=(git://git.lammps.org/lammps-ro.git)
+md5sums=('SKIP')
+build() {
+  cd $srcdir/lammps-ro/src
+  sed -i -e '0,/LMP_INC/{s/LMP_INC.*/LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_PNG -DLAMMPS_FFMPEG -DLAMMPS_MEMALIGN -DLAMMPS_XDR/}' \
+         -e '0,/FFT_INC/{s/FFT_INC.*/FFT_INC = -DFFT_FFTW3/}' \
+         -e '0,/FFT_PATH/{s/FFT_PATH.*/FFT_PATH = -L\/usr\/lib/}' \
+         -e '0,/FFT_LIB/{s/FFT_LIB.*/FFT_LIB = -lfftw3f -lfftw3l -lfftw3/}' \
+         -e '0,/JPG_INC/{s/JPG_INC.*/JPG_INC =   -I\/usr\/include/}' \
+         -e '0,/JPG_PATH/{s/JPG_PATH.*/JPG_PATH =  -L\/usr\/lib/}' \
+         -e '0,/JPG_LIB/{s/JPG_LIB.*/JPG_LIB =   -ljpeg -lpng/}' MAKE/Makefile.mpi
+  make yes-kspace
+  make yes-molecule
+  make yes-replica
+  make yes-rigid
+  make yes-user-fep
+  make yes-user-molfile
+  make mpi
+}
+
+package() {
+  install -d $pkgdir/usr/share/lammps
+  install -d  $pkgdir/usr/share/doc/lammps
+  cd $srcdir/lammps-ro
+  install -Dm 755 src/lmp_mpi $pkgdir/usr/bin/lmp_mpi
+  cp bench examples $pkgdir/usr/share/lammps -r
+  cp doc/* $pkgdir/usr/share/doc/lammps -r
+}
