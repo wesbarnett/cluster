@@ -12,20 +12,24 @@ source=(git://git.lammps.org/lammps-ro.git)
 md5sums=('SKIP')
 build() {
   cd $srcdir/lammps-ro/src
-  sed -i -e '0,/LMP_INC/{s/LMP_INC.*/LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_PNG -DLAMMPS_FFMPEG -DLAMMPS_MEMALIGN -DLAMMPS_XDR/}' \
-         -e '0,/FFT_INC/{s/FFT_INC.*/FFT_INC = -DFFT_FFTW3/}' \
-         -e '0,/FFT_PATH/{s/FFT_PATH.*/FFT_PATH = -L\/usr\/lib/}' \
-         -e '0,/FFT_LIB/{s/FFT_LIB.*/FFT_LIB = -lfftw3f -lfftw3l -lfftw3/}' \
-         -e '0,/JPG_INC/{s/JPG_INC.*/JPG_INC =   -I\/usr\/include/}' \
-         -e '0,/JPG_PATH/{s/JPG_PATH.*/JPG_PATH =  -L\/usr\/lib/}' \
-         -e '0,/JPG_LIB/{s/JPG_LIB.*/JPG_LIB =   -ljpeg -lpng/}' MAKE/Makefile.mpi
+  # See Section 2.2 of the manual about these options
+  # This compiles it with jpeg, png, ffmeg, xdr support. Also points to already
+  # install fftw library instead of making its own.
+  sed -i -e '0,/LMP_INC/{s/LMP_INC.*/LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_PNG -DLAMMPS_FFMPEG -DLAMMPS_XDR/}' \
+        -e '0,/FFT_INC/{s/FFT_INC.*/FFT_INC = -DFFT_FFTW3/}' \
+        -e '0,/FFT_PATH/{s/FFT_PATH.*/FFT_PATH = -L\/usr\/lib/}' \
+        -e '0,/FFT_LIB/{s/FFT_LIB.*/FFT_LIB = -lfftw3f -lfftw3l -lfftw3/}' \
+        -e '0,/JPG_INC/{s/JPG_INC.*/JPG_INC =   -I\/usr\/include/}' \
+        -e '0,/JPG_PATH/{s/JPG_PATH.*/JPG_PATH =  -L\/usr\/lib/}' \
+        -e '0,/JPG_LIB/{s/JPG_LIB.*/JPG_LIB =   -ljpeg -lpng/}' MAKE/Makefile.mpi
+  # Modify what packages you want here
   make yes-kspace
   make yes-molecule
   make yes-replica
   make yes-rigid
   make yes-user-fep
   make yes-user-molfile
-  make mpi
+  make -j 8 mpi
 }
 
 package() {
