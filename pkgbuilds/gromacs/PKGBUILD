@@ -1,7 +1,7 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 pkgname=gromacs
-pkgver=5.0.4
-pkgrel=4
+pkgver=5.0.5
+pkgrel=5
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
 license=("GPL")
@@ -10,31 +10,23 @@ depends=('fftw' 'lesstif' 'perl' 'libxml2' 'libsm' 'libx11' 'blas' 'lapack' 'ope
 makedepends=('cmake' 'openmpi')
 options=('!libtool')
 source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
-sha1sums=('faeeab8486475b26bede1ab4ff762f23cd973b1e')
+sha1sums=('990a93d62964eb80d310e713790795a36681eacf')
 
 build() {
-  mkdir -p ${srcdir}/${pkgname}-${pkgver}/singlebuild
-  mkdir -p ${srcdir}/${pkgname}-${pkgver}/mpibuild
-  cd ${srcdir}/${pkgname}-${pkgver}/singlebuild
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   # NOTE: for whatever reason you have to do this part manually
   #cmake .. \
-  #       -DCMAKE_INSTALL_PREFIX=/usr
-  make -j 8
-
-  cd ${srcdir}/${pkgname}-${pkgver}/mpibuild
-  #cmake .. \
   #       -DCMAKE_INSTALL_PREFIX=/usr \
-  #       -DGMX_MPI=ON
+  #       -DGMX_MPI=ON \
+  #       -DGMX_DEFAULT_SUFFIX=OFF
   make -j 8
 }
 
 package() {
 
   msg2 "Making the single precision executables"
-  cd ${srcdir}/${pkgname}-${pkgver}/singlebuild
-  make DESTDIR=${pkgdir} install
-
-  cd ${srcdir}/${pkgname}-${pkgver}/mpibuild
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   make DESTDIR=${pkgdir} install
 
   mv ${pkgdir}/usr/lib64 ${pkgdir}/usr/lib
