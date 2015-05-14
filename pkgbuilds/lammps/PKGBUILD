@@ -1,6 +1,6 @@
 # Maintainer: James Barnett
 pkgname=lammps  
-pkgver=11May2015
+pkgver=12May2015
 pkgrel=1 
 pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
 url="http://lammps.sandia.gov/"
@@ -13,22 +13,27 @@ md5sums=('SKIP')
 build() {
   cd $srcdir/lammps-ro/src
   # See Section 2.2 of the manual about these options
-  # This compiles it with jpeg, png, ffmeg, xdr support. Also points to already
-  # install fftw library instead of making its own.
-  sed -i -e '0,/LMP_INC/{s/LMP_INC.*/LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_PNG -DLAMMPS_FFMPEG -DLAMMPS_XDR/}' \
-        -e '0,/FFT_INC/{s/FFT_INC.*/FFT_INC = -DFFT_FFTW3/}' \
+  # This compiles it with png, ffmeg support. Also points to already
+  # installed fftw library instead of making its own and uses single precision
+  # for FFTW. Additionally this is compiled for an Intel Haswell i7 with AVX2
+  # instructions and OpenMP.
+  sed -i -e '0,/LMP_INC/{s/LMP_INC.*/LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_PNG -DLAMMPS_FFMPEG/}' \
+        -e '0,/CCFLAGS/{s/CCFLAGS.*/CCFLAGS =	-g -O3 -march=core-avx2 -fopenmp -DLAMMPS_MEMALIGN=64/}' \
+        -e '0,/LINKFLAGS/{s/LINKFLAGS.*/LINKFLAGS =	-g -O -fopenmp/}' \
+        -e '0,/FFT_INC/{s/FFT_INC.*/FFT_INC = -DFFT_FFTW3 -DFFT_SINGLE -DFFTW_SIZE/}' \
         -e '0,/FFT_PATH/{s/FFT_PATH.*/FFT_PATH = -L\/usr\/lib/}' \
-        -e '0,/FFT_LIB/{s/FFT_LIB.*/FFT_LIB = -lfftw3f -lfftw3l -lfftw3/}' \
+        -e '0,/FFT_LIB/{s/FFT_LIB.*/FFT_LIB = -lfftw3f/}' \
         -e '0,/JPG_INC/{s/JPG_INC.*/JPG_INC =   -I\/usr\/include/}' \
         -e '0,/JPG_PATH/{s/JPG_PATH.*/JPG_PATH =  -L\/usr\/lib/}' \
-        -e '0,/JPG_LIB/{s/JPG_LIB.*/JPG_LIB =   -ljpeg -lpng/}' MAKE/Makefile.mpi
+        -e '0,/JPG_LIB/{s/JPG_LIB.*/JPG_LIB =   -lpng/}' MAKE/Makefile.mpi
   # Modify what packages you want here
   make yes-kspace
   make yes-molecule
-  make yes-replica
   make yes-rigid
+  make yes-xtc
   make yes-user-fep
-  make yes-user-molfile
+  make yes-user-intel
+  make yes-user-omp
   make -j 8 mpi
 }
 
