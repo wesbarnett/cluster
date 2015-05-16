@@ -37,18 +37,8 @@ This script:
 * Partitions the disk(s) (currently setup for two disks)
 * Creates the file system
 * Mounts the partitions
-* Installs the base system
+* Installs the base system with several other packages (see script)
 * Generates fstab
-* Grabs part 2, makes it executable, and puts it in /mnt
-* Switches to chroot environment
-
-### install-part2
-
-After you are in the chroot environment you should see the second script. Run
-the script.
-
-This script:
-
 * Sets the locale (English)
 * Sets the time zone (Central US)
 * Sets the hostname ("master" for the master node, "nodeX" where X is node
@@ -59,27 +49,13 @@ This script:
 * Updates /etc/hosts with nodes
 * Creates initial ramdisk
 * Sets root password
-* Install [GRUB](https://wiki.archlinux.org/index.php/GRUB) as bootloader
+* Installs [GRUB](https://wiki.archlinux.org/index.php/GRUB) as bootloader
 * Sets up [NFS](https://wiki.archlinux.org/index.php/NFS). Specifically the
   [pacman cache on the master will be
 shared](https://wiki.archlinux.org/index.php/Pacman_tips#Network_shared_pacman_cache)
 with the nodes. Also the home directories on the nodes will be shared with the
 master.
-* Downloads part 3, and makes executable.
-
-### install-part3
-
-After part2 is down, you plug the ethernet cable of the node (if not on master)
-into the internal switch now, since the packages can be retrieved from the
-master's cache. After you've restarted you should see part 3 already downloaded.
-
-This script:
-
-* Downloads and installs: `vim`, `openssh`, `cmake`, `git`, `mlocate`, `zsh`, `screen`,
-  `xorg-server`, `fftw`, `xorg-auth`
-* Updates the locate database.
-* [Enables the `wheel` group in
-  `sudoers`](https://wiki.archlinux.org/index.php/Sudo).
+* Sets up a custom [sudoers file](https://wiki.archlinux.org/index.php/Sudo).
 * Adds your user (be sure to change the variable at the beginning of the
   script).
 * [Adds all other
@@ -101,7 +77,7 @@ to change the default password and user names at the beginning of the script.
 * Enables
   [auto-logout](https://wiki.archlinux.org/index.php/Security#Automatic_logout) for virtual consoles.
 * Adds [ddclient to do dynamic
-  DNS](https://wiki.archlinux.org/index.php/Dynamic_DNS) for the system with
+  DNS](https://wiki.archlinux.org/index.php/Dynamic_DNS) for the master ystem with
   [no-ip.com](azathoth.ddns.net). You'll need to
   set the user, password, and domain in the script before running, or change the
 configuration file afterwards.
