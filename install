@@ -1,21 +1,35 @@
 #!/bin/bash
-# Arch install script for cluster nod
+# Arch install script for cluster
+# For a two disk setup with second disk on /data
 
-# TODO: Use old node for new master, load up large HD's on it and make it NAS.
-# Smaller storage for nodes.
+INTERFACE=eno1		# internal
+EXTINTERFACE=enp3s2	# external (on master)
 
-GITHUB=https://raw.githubusercontent.com/wesbarnett/cluster/master
-PART2=install-part2
+TIMEZONE=US/Central
+
+myuser=wes
+users=
+password=
+
+NOIPUSER=
+NOIPPASS=
+NOIPDOMAIN=
+
+PACSTRAP="base base-devel nfs-utils wget grub vim openssh mlocate zsh xorg-server xorg-xauth pkgfile iptables sshguard pdnsd intel-ucode"
 
 echo "Which type of machine are you installing on?"
 select TYPE in master node; do
 	if [[ "$REPLY"  = 1 ]]; then
 		BOOT=200M
 		ROOT=40G
+		MYHOSTNAME=master
 		break
 	elif [[ "$REPLY" = 2 ]]; then
+		echo "Which node are you installing (give the number)?"
+		read NODE
 		BOOT=200M
 		ROOT=20G
+		MYHOSTNAME=node$NODE
 		break
 	fi
 done
@@ -58,11 +72,533 @@ pacstrap /mnt base base-devel
 echo "Generating fstab..."
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
-echo "Getting part 2..."
-wget $GITHUB/$PART2
-chmod +x $PART2
-cp $PART2 /mnt/
+# Set language
+echo "Setting locale..."
+sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g' /mnt/etc/locale.gen
+arch-chroot /mnt locale-gen
+echo LANG=en_US.UTF-8 > /mnt/etc/locale.conf
 
-echo "You are now entering chroot environment. Run ./$PART2 to continue"
-# Base system is installed, now change to it and run postinstall script there
-arch-chroot /mnt /bin/bash
+# Set time zone
+echo "Setting time zone..."
+ln -sf /usr/share/zoneinfo/$TIMEZONE /mnt/etc/localtime
+arch-chroot /mnt wclock --systohc --utc
+
+# Set hostname
+echo "Setting hostname..."
+echo $MYHOSTNAME > /mnt/etc/hostname
+
+# Enable networking
+echo "Enabling internal network interface..."
+arch-chroot /mnt systemctl enable systemd-networkd.service
+arch-chroot /mnt systemctl enable systemd-resolved.service
+
+if [ "$MASTER" = true ]; then
+
+cat - > /mnt/etc/systemd/network/external.network <<NETCONFIG
+[Match]
+Name=$EXTINTERFACE
+
+[Network]
+DHCP=ipv4
+IPForward=yes
+NETCONFIG
+
+cat - > /mnt/etc/systemd/network/wired.network <<NETCONFIG
+[Match]
+Name=$INTERFACE
+
+[Network]
+IPForward=yes
+IPMasquerade=yes
+
+[Address]
+Address=192.168.0.$NODE
+
+[Route]
+Gateway=192.168.0.1
+NETCONFIG
+
+else
+
+cat - > /mnt/systemd/network/wired.network <<NETCONFIG
+[Match]
+Name=$INTERFACE
+
+[Address]
+Address=192.168.0.$NODE
+
+[Route]
+Gateway=192.168.0.1
+
+NETCONFIG
+
+fi
+
+echo "Updating hosts..."
+cat ->> /mnt/etc/hosts <<HOSTS 
+192.168.0.1	master
+192.168.0.2	node2
+192.168.0.3	node3
+192.168.0.4	node4
+192.168.0.5	node5
+192.168.0.6	node6
+192.168.0.7	node7
+192.168.0.8	node8
+192.168.0.9	node9
+192.168.0.10	node10
+192.168.0.11	node11
+192.168.0.12	node12
+HOSTS
+
+# Create ramdisk environment
+echo "Creating initial ramdisk..."
+arch-chroot /mnt mkinitcpio -p linux
+
+# Set root password
+echo "Create root password..."
+arch-chroot /mnt passwd
+
+# Install a few needed things
+echo "Installing bootloader..."
+arch-chroot /mnt grub-install --target=i386-pc --recheck /dev/sda
+arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+# Create pacman cache share
+if [ "$MASTER" = true ]; then
+	
+	echo "Creating shared pacman cache..."
+	mkdir -p /mnt/srv/nfs4/pacmancache
+
+	echo "/var/cache/pacman/pkg /srv/nfs4/pacmancache  none   bind   0   0" >> /mnt/etc/fstab
+
+	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /mnt/etc/exports
+	echo "/srv/nfs4/pacmancache 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /mnt/etc/exports
+
+	arch-chroot /mnt exportfs -rav
+
+	arch-chroot /mnt systemctl enable rpcbind.service
+	arch-chroot /mnt systemctl enable nfs-server.service
+
+else
+
+	echo "Creating home directory export..."
+	mkdir -p /mnt/srv/nfs4/home
+	mkdir -p /mnt/srv/nfs4/data
+
+	echo "/home /srv/nfs4/home  none   bind   0   0" >> /mnt/etc/fstab
+    echo "/data /srv/nfs4/data  none   bind   0   0" >> /mnt/etc/fstab
+
+	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /mnt/etc/exports
+	echo "/srv/nfs4/home 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /mnt/etc/exports
+	echo "/srv/nfs4/data 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /mnt/etc/exports
+
+	arch-chroot /mnt exportfs -rav
+
+	arch-chroot /mnt systemctl enable rpcbind.service
+	arch-chroot /mnt systemctl enable nfs-server.service
+
+	echo "master:/srv/nfs4/pacmancache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /mnt/etc/fstab
+fi
+
+arch-chroot /mnt updatedb
+arch-chroot pkgfile --update
+
+echo "Setting up sudoers..."
+cat -> /mnt/etc/sudoers <<SUDOFILE
+## sudoers file.
+##
+## This file MUST be edited with the 'visudo' command as root.
+## Failure to use 'visudo' may result in syntax or file permission errors
+## that prevent sudo from running.
+##
+## See the sudoers man page for the details on how to write a sudoers file.
+##
+
+Cmnd_Alias  POWER    = /sbin/halt, /sbin/reboot, /sbin/poweroff, /usr/bin/shutdown
+Cmnd_Alias  KILL     = /usr/bin/kill, /usr/bin/killall
+Cmnd_Alias  STORAGE  = /usr/bin/mount, /usr/bin/umount
+Cmnd_Alias  SYSTEMD  = /usr/bin/journalctl, /usr/bin/systemctl
+Cmnd_Alias  PKGMAN   = /usr/bin/pacman, /usr/bin/pkgfile
+Cmnd_Alias  FIREWALL = /usr/bin/iptables, /usr/bin/ip6tables
+Cmnd_Alias  USERS    = /usr/bin/useradd, /usr/bin/usermod, /usr/bin/groupadd, /user/bin/groupdel
+
+root ALL=(ALL) ALL
+%admin ALL=(root) POWER, STORAGE, KILL, SYSTEMD, PKGMAN, FIREWALL, USERS
+%wheel ALL=(root) POWER, STORAGE, KILL
+## (the '#' here does not indicate a comment)
+#includedir /etc/sudoers.d
+SUDOFILE
+
+echo "Changing root shell to zsh..."
+arch-chroot /mnt chsh -s /usr/bin/zsh
+
+echo "Adding personal user..."
+arch-chroot /mnt useradd -m -G wheel -s /bin/zsh $myuser
+arch-chroot /mnt groupadd admin
+arch-chroot /mnt usermod -aG admin $myuser
+echo "Enter your user password..."
+arch-chroot /mnt passwd $myuser
+
+# Add users and configure them
+echo "Adding other users..."
+
+for user in $users; do
+    echo "Adding $user..."
+	arch-chroot /mnt useradd -m -G wheel -s /bin/bash $user
+	mkdir /mnt/data/$user
+	chown -R $user:$user /mnt/data/$user
+	echo $user:$password | arch-chroot /mnt chpasswd
+	arch-chroot /mnt chage -d 0 $user
+done
+
+echo "Setting up firewall and sshguard..."
+
+if [ "$MASTER" = true ]; then
+
+echo "net.ipv4.ip_forward=1" >> /mnt/etc/systctl.d/99-sysctl.conf
+
+echo "IPTABLES_FORWARD=1" >> /mnt/etc/conf.d/iptables
+
+cat - > /mnt/etc/iptables/iptables.rules <<RULES
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+:sshguard - [0:0]
+-A INPUT -p tcp -m comment --comment "000 send ssh traffic to sshguard" -j sshguard
+-A INPUT -m comment --comment "001 accept established traffic" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i lo -m comment --comment "002 accept loopback device" -j ACCEPT
+-A INPUT -i $INTERFACE -m comment --comment "003 accept traffic on trusted interface (within cluster)" -j ACCEPT
+-A INPUT -m comment --comment "004 drop traffic with invalid headers or checksums" -m conntrack --ctstate INVALID -j DROP
+-A INPUT -p icmp -m comment --comment "005 accept all echo requests" -m conntrack --ctstate NEW -m icmp --icmp-type 8 -j ACCEPT
+-A INPUT -p tcp -m multiport --dports 22 -m comment --comment "006 accept ssh traffic" -j ACCEPT
+-A INPUT -p udp -m comment --comment "007 if port is not open, reject" -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p tcp -m comment --comment "008 reject tcp-reset packets" -j REJECT --reject-with tcp-reset
+-A INPUT -m comment --comment "009 reject all other traffic with unreachable message" -j REJECT --reject-with icmp-proto-unreachable
+-A INPUT -m comment --comment "998 drop all INPUT by default" -j DROP
+-A FORWARD -m comment --comment "010 established forwarded traffic is allowed" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -p icmp -m comment --comment "011 accept all forwared icmp traffic" -j ACCEPT
+-A FORWARD -i lo -m comment --comment "012 accept all forwarded loopback traffic" -j ACCEPT
+-A FORWARD -i $INTERFACE -o $EXTINTERFACE -m comment --comment "013 accept all traffic from cluster to outside" -j ACCEPT
+-A FORWARD -m comment --comment "014 reject all traffic with unreachable message" -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -m comment --comment "999 drop all FORWARD by default" -j DROP
+COMMIT
+*nat
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+-A POSTROUTING -s 192.168.0.0/24 -o $EXTINTERFACE -m comment --comment "015 masquerade all cluster traffic as coming from master" -j MASQUERADE
+COMMIT
+RULES
+
+arch-chroot /mnt touch /etc/iptables/ip6tables.rules
+arch-chroot /mnt systemctl enable iptables.service
+arch-chroot /mnt systemctl enable sshguard.service
+
+echo "Setting up ssh..."
+cat - > /mnt/etc/ssh/sshd_config <<SSHCONFIG
+#	\$OpenBSD: sshd_config,v 1.94 2015/02/02 01:57:44 deraadt Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# The default requires explicit activation of protocol 1
+Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /etc/ssh/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_dsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+#HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 1024
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+LoginGraceTime 30s
+PermitRootLogin no
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
+
+# The default is to check both .ssh/authorized_keys and .ssh/authorized_keys2
+# but this is overridden so installations will only check .ssh/authorized_keys
+AuthorizedKeysFile	.ssh/authorized_keys
+
+#AuthorizedPrincipalsFile none
+
+#AuthorizedKeysCommand none
+#AuthorizedKeysCommandUser nobody
+
+# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+#RhostsRSAAuthentication no
+# similar for protocol version 2
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# RhostsRSAAuthentication and HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# Change to no to disable s/key passwords
+ChallengeResponseAuthentication no
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+UsePAM yes
+
+#AllowAgentForwarding yes
+AllowTcpForwarding yes
+#GatewayPorts no
+X11Forwarding yes
+X11DisplayOffset 10
+X11UseLocalhost yes
+#PermitTTY yes
+PrintMotd no # pam does that
+#PrintLastLog yes
+#TCPKeepAlive yes
+#UseLogin no
+UsePrivilegeSeparation sandbox		# Default for new installations.
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
+#PidFile /run/sshd.pid
+#MaxStartups 10:30:100
+#PermitTunnel no
+#ChrootDirectory none
+#VersionAddendum none
+
+Banner /etc/issue.net
+
+# override default of no subsystems
+Subsystem	sftp	/usr/lib/ssh/sftp-server
+
+SSHCONFIG
+
+else
+
+cat - > /mnt/etc/ssh/sshd_config <<SSHCONFIG
+#	\$OpenBSD: sshd_config,v 1.94 2015/02/02 01:57:44 deraadt Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# The default requires explicit activation of protocol 1
+#Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /etc/ssh/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_dsa_key
+#HostKey /etc/ssh/ssh_host_ecdsa_key
+#HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 1024
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+#LoginGraceTime 2m
+#PermitRootLogin yes
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
+SSHCONFIG
+
+fi
+
+arch-chroot /mnt systemctl enable sshd
+
+# Add domain name server caching on the master node
+if [ "$MASTER" = true ]; then
+echo "Setting up DNS cache server..."
+cat - > /mnt/etc/pdnsd.conf <<DNSCONFIG
+global {
+	perm_cache=1024;
+	cache_dir="/var/cache/pdnsd";
+	run_as="pdnsd";
+	server_ip = 192.168.0.1;
+	status_ctl = on;
+	query_method=udp_tcp;
+	min_ttl=15m;
+	max_ttl=1w;
+	timeout=10;
+	neg_domain_pol=on;
+	udpbufsize=1024;
+}
+
+server {
+	label= "Google DNS";
+	ip = 8.8.8.8, 8.8.4.4;
+	timeout=4;
+	uptest=if;
+	interface=enp3s2;
+	interval=10m;
+	purge_cache=off;
+	edns_query=yes;
+}
+
+source {
+	owner=localhost;
+	file="/etc/hosts";
+}
+
+
+rr {
+	name=localhost;
+	reverse=on;
+	a=127.0.0.1;
+	owner=localhost;
+	soa=localhost,root.localhost,42,86400,900,86400,86400;
+}
+DNSCONFIG
+
+arch-chroot /mnt systemctl enable pdnsd
+
+echo "Setting up ddclient..."
+cat -> /mnt/etc/ddclient/ddclient.conf <<DDCLIENTCONF
+daemon=300
+syslog=yes
+mail=root
+mail-failure=root
+pid=/var/run/ddclient.pid
+ssl=yes
+use=web, web=checkip.dyndns.org/, web-skip='IP Address'
+protocol=dyndns2
+server=dynupdate.no-ip.com
+login=$NOIPUSER
+password=$NOIPPASS
+$NOIPDOMAIN
+DDCLIENTCONF
+
+arch-chroot /mnt systemctl enable ddclient
+
+fi
+
+# Add automatic timeout for virtual consoles (not terminal emulators)
+cat -> /mnt/etc/profile.d/shell-timeout.sh <<TMOUTSETUP
+TMOUT="\$(( 60*10 ))";
+[ -z "\$DISPLAY" ] && export TMOUT;
+case \$( /usr/bin/tty ) in
+        /dev/tty[0-9]*) export TMOUT;;
+esac
+TMOUTSETUP
+
+echo "Creating first boot script..."
+
+if [ "$MASTER" = true ]; then
+
+cat -> /mnt/firstboot <<FIRSTBOOT
+#!/bin/bash
+timedatectl set-ntp true
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+systemctl disable firstboot.service
+rm -f /etc/systemd/system/firstboot.service
+rm -f /firstboot
+FIRSTBOOT
+
+else
+
+cat -> /mnt/firstboot <<FIRSTBOOT
+timedatectl set-ntp true
+rm /etc/resolv.conf
+echo "nameserver 192.168.0.1 > /etc/resolv.conf"
+systemctl disable firstboot.service
+rm -f /etc/systemd/system/firstboot.service
+rm -f /firstboot
+FIRSTBOOT
+
+fi
+
+echo "Generating first-boot service... "
+cat -> /mnt/etc/systemd/system/firstboot.service <<FIRSTBOOTSERV
+[Unit]
+Description=Configuration script for first boot of system
+After=basic.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/bin/bash /firstboot
+
+[Install]
+WantedBy=basic.target
+FIRSTBOOTSERV
+
+arch-chroot /mnt systemctl enable firstboot.service
