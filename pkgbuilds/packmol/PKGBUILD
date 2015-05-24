@@ -1,6 +1,6 @@
 # James W. Barnett <jbarnet4@tulane.edu>
 pkgname=packmol
-pkgver=14.225
+pkgver=15.133
 pkgrel=1
 pkgdesc="Creates an initial point for molecular dynamics simulations by packing molecules in defined regions of space."
 depends=('gcc-libs' 'tcl' 'bash')
@@ -9,12 +9,12 @@ arch=('i686' 'x86_64')
 license=('GPL')
 url="http://www.ime.unicamp.br/~martinez/packmol/"
 source=(http://leandro.iqm.unicamp.br/packmol/versionhistory/packmol-${pkgver}.tar.gz)
-sha1sums=('024c2ef3df4adc584301b6124646f80b200984c8')
+sha1sums=('ae8a045a3ef43b8dbaafbd3cff0020ccbe232303')
 
 build() {
   cd ${srcdir}/packmol
-  sed -i 's/maxatom     =    500000/maxatom     =   2000000/g' sizes.i
-  sed -i 's/maxtype     =        50/maxtype     =       150/g' sizes.i
+  sed -i 's/maxatom     =    500000/maxatom     =   2000000/g' sizes.f90
+  sed -i 's/maxtype     =        50/maxtype     =       150/g' sizes.f90
   ./configure
   make
 }
