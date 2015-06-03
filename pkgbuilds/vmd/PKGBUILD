@@ -27,4 +27,5 @@ package() {
   ./configure
   cd src; make install
   sed -i 's|set defaultvmddir=.*|set defaultvmddir=/usr/lib/vmd|' "${pkgdir}/usr/bin/vmd"
+  ln -s /usr/lib/vmd/plugins/LINUXAMD64/bin/catdcd5.1/catdcd ${pkgdir}/usr/bin/
 }
