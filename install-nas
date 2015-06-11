@@ -18,9 +18,9 @@ sgdisk -n 1:2048:+100M -c 1:"Linux /boot" -t 1:fd00 /dev/sda
 sgdisk -n 2 -c 2:"Linux /" -t 2:fd00 /dev/sda
 
 sgdisk --backup=table /dev/sda
-gdisk --load-backup=table /dev/sdb
-gdisk --load-backup=table /dev/sdc
-gdisk --load-backup=table /dev/sdd
+sgdisk --load-backup=table /dev/sdb
+sgdisk --load-backup=table /dev/sdc
+sgdisk --load-backup=table /dev/sdd
 
 mdadm --create /dev/md0 --level=5 --raid-devices=4 /dev/sd[abcd]2
 mdadm --create /dev/md1 --level=1 --raid-devices=4 --metadata=1.0 /dev/sd[abcd]1
