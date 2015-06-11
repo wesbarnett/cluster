@@ -29,7 +29,7 @@ fi
 
 tmux new-session -s "clusterssh" -d 'ssh node2' 2>/dev/null 1>&2
 
-for i in {3..$NNODES}; do
+for i in {$NNODES..3}; do
     tmux split-window -t "clusterssh" -d 'ssh node'$i'' 2>/dev/null 1>&2
     tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 done

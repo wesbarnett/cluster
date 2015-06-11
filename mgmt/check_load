@@ -1,0 +1,13 @@
+#!/bin/bash
+
+LOAD=4.0
+
+for i in {2..12}; do
+    node_load=$(ssh node$i uptime | awk '{print $10}' | cut -c-4)
+    check=$(echo "$node_load > $LOAD" | bc)
+    if [[ $check -eq 1 ]]; then
+        echo "node$i : in use ($node_load)"
+    else
+        echo "node$i : not in use, but check ($node_load)"
+    fi
+done
