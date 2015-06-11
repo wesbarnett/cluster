@@ -14,6 +14,8 @@ modprobe raid1
 modprobe raid5
 modprobe dm-mod
 
+mdadm --zero-superblock /dev/sd[abcd]
+
 sgdisk -og /dev/sda 
 sgdisk -n 1:2048:+100M -c 1:"Linux /boot" -t 1:fd00 /dev/sda
 sgdisk -n 2 -c 2:"Linux /" -t 2:fd00 /dev/sda
@@ -25,6 +27,8 @@ sgdisk --load-backup=table /dev/sdd
 
 mdadm --create /dev/md0 --level=5 --raid-devices=4 /dev/sd[abcd]2
 mdadm --create /dev/md1 --level=1 --raid-devices=4 --metadata=1.0 /dev/sd[abcd]1
+
+mdadm --assemble --scan
 
 pvcreate /dev/md0
 vgcreate VolGroupArray /dev/md0
@@ -46,7 +50,9 @@ mkdir -p /mnt/var
 mount /dev/VolGroupArray/lvvar /mnt/var
 
 echo "Installing base system..."
-pacstrap /mnt base base-devel syslinux nfs-utils wget vim openssh mlocate zsh pkgfile intel-ucode gptfdisk
+pacstrap /mnt base base-devel syslinux nfs-utils wget vim openssh mlocate zsh pkgfile intel-ucode
+
+mdadm --detail --scan >> /mnt/etc/mdadm.conf
 
 # Make sure disks are automounted
 echo "Generating fstab..."
@@ -350,7 +356,7 @@ arch-chroot /mnt systemctl enable firstboot.service
 
 ROOTUUID=$(lsblk -f | awk '/lvroot/ && !seen {print $3;seen=1}')
 
-arch-chroot /mnt syslinux-install_update -i -a -m
+arch-chroot /mnt syslinux-install_update -i -a -m -c /mnt
 
 cat -> /mnt/boot/syslinux/syslinux.cfg <<SYSLINUX
 PROMPT 0
