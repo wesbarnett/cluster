@@ -4,6 +4,7 @@
 MYHOSTNAME=nas2
 NODE=101
 TIMEZONE=US/Central
+INTERFACE=
 
 myuser=wes
 users=
@@ -45,7 +46,7 @@ mkdir -p /mnt/var
 mount /dev/VolGroupArray/lvvar /mnt/var
 
 echo "Installing base system..."
-pacstrap /mnt base base-devel syslinux nfs-utils wget vim openssh mlocate zsh pkgfile intel-ucode
+pacstrap /mnt base base-devel syslinux nfs-utils wget vim openssh mlocate zsh pkgfile intel-ucode gptfdisk
 
 # Make sure disks are automounted
 echo "Generating fstab..."
@@ -348,6 +349,8 @@ FIRSTBOOTSERV
 arch-chroot /mnt systemctl enable firstboot.service
 
 ROOTUUID=$(lsblk -f | awk '/lvroot/ && !seen {print $3;seen=1}')
+
+arch-chroot /mnt syslinux-install_update -i -a -m
 
 cat -> /mnt/boot/syslinux/syslinux.cfg <<SYSLINUX
 PROMPT 0
