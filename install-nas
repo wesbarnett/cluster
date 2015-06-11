@@ -28,6 +28,8 @@ sgdisk --load-backup=table /dev/sdd
 mdadm --create /dev/md0 --level=5 --raid-devices=4 /dev/sd[abcd]2
 mdadm --create /dev/md1 --level=1 --raid-devices=4 --metadata=1.0 /dev/sd[abcd]1
 
+mdadm --examine --scan > /mnt/etc/mdadm.conf
+
 mdadm --assemble --scan
 
 pvcreate /dev/md0
@@ -107,6 +109,8 @@ cat -> /mnt/etc/hosts <<HOSTS
 192.168.0.100	nas1
 HOSTS
 
+#TODO add dm_mod to MODULES
+#TODO add mdadm_udev and lvm2 to HOOKS
 # Create ramdisk environment
 echo "Creating initial ramdisk..."
 arch-chroot /mnt mkinitcpio -p linux
@@ -376,3 +380,4 @@ LABEL archfallback
     INITRD ../intel-ucode.img,../initramfs-linux.img
 
 SYSLINUX
+
