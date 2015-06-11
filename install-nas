@@ -60,7 +60,7 @@ echo LANG=en_US.UTF-8 > /mnt/etc/locale.conf
 # Set time zone
 echo "Setting time zone..."
 ln -sf /usr/share/zoneinfo/$TIMEZONE /mnt/etc/localtime
-arch-chroot /mnt wclock --systohc --utc
+arch-chroot /mnt hwclock --systohc --utc
 
 # Set hostname
 echo "Setting hostname..."
@@ -124,7 +124,7 @@ arch-chroot /mnt systemctl enable nfs-server.service
 echo "master:/srv/nfs4/pacmancache /var/cache/pacman/pkg nfs noauto,noatime,rsize=32768,wsize=32768 0 0" >> /mnt/etc/fstab
 
 arch-chroot /mnt updatedb
-arch-chroot pkgfile --update
+arch-chroot /mnt pkgfile --update
 
 echo "Setting up sudoers..."
 cat -> /mnt/etc/sudoers <<SUDOFILE
