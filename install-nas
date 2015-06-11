@@ -169,8 +169,6 @@ echo "Adding other users..."
 for user in $users; do
     echo "Adding $user..."
 	arch-chroot /mnt useradd -m -G wheel -s /bin/bash $user
-	mkdir /mnt/data/$user
-	chown -R $user:$user /mnt/data/$user
 	echo $user:$password | arch-chroot /mnt chpasswd
 	arch-chroot /mnt chage -d 0 $user
 done
