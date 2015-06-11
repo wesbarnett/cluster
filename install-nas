@@ -109,10 +109,10 @@ cat -> /mnt/etc/hosts <<HOSTS
 192.168.0.100	nas1
 HOSTS
 
-#TODO add dm_mod to MODULES
-#TODO add mdadm_udev and lvm2 to HOOKS
 # Create ramdisk environment
 echo "Creating initial ramdisk..."
+sed -i -e 's/udev /udev mdadm_udev /g' -e 's/block /block lvm2 /g'\
+    -e '/s/^MODULES=.*/MODULES="dm_mod"/g' /etc/mkinitcpio.conf
 arch-chroot /mnt mkinitcpio -p linux
 
 # Set root password
