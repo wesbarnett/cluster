@@ -1,12 +1,13 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+# Note: march needs to be set equal to "native" in /etc/makepkg.conf
 pkgname=gromacs
 pkgver=5.0.5
-pkgrel=5
+pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
 license=("GPL")
 arch=('i686' 'x86_64')
-depends=('fftw' 'lesstif' 'perl' 'libxml2' 'libsm' 'libx11' 'blas' 'lapack' 'openmpi')
+depends=('fftw-bettersimd' 'openmpi')
 makedepends=('cmake' 'openmpi')
 options=('!libtool')
 source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
@@ -15,11 +16,10 @@ sha1sums=('990a93d62964eb80d310e713790795a36681eacf')
 build() {
   mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
   cd ${srcdir}/${pkgname}-${pkgver}/build
-  # NOTE: for whatever reason you have to do this part manually
-  #cmake .. \
-  #       -DCMAKE_INSTALL_PREFIX=/usr \
-  #       -DGMX_MPI=ON \
-  #       -DGMX_DEFAULT_SUFFIX=OFF
+  cmake .. \
+         -DCMAKE_INSTALL_PREFIX=/usr \
+         -DGMX_MPI=ON \
+         -DGMX_DEFAULT_SUFFIX=OFF
   make -j 8
 }
 
