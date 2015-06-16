@@ -18,8 +18,10 @@ build() {
   cd ${srcdir}/${pkgname}-${pkgver}/build
   cmake .. \
          -DCMAKE_INSTALL_PREFIX=/usr \
+         -DCMAKE_INSTALL_LIBDIR=lib \
          -DGMX_MPI=ON \
-         -DGMX_DEFAULT_SUFFIX=OFF
+         -DGMX_DEFAULT_SUFFIX=OFF \
+         -DREGRESSIONTEST_DOWNLOAD=ON
   make -j 8
 }
 
@@ -28,8 +30,7 @@ package() {
   msg2 "Making the single precision executables"
   cd ${srcdir}/${pkgname}-${pkgver}/build
   make DESTDIR=${pkgdir} install
-
-  mv ${pkgdir}/usr/lib64 ${pkgdir}/usr/lib
+  make check
 
   msg2 "Installing completion and environment setup script"
   mkdir -p ${pkgdir}/etc/profile.d/
