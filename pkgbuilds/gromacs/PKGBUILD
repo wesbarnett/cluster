@@ -7,8 +7,17 @@ pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Ne
 url='http://www.gromacs.org/'
 license=("GPL")
 arch=('i686' 'x86_64')
-depends=('fftw-bettersimd' 'openmpi')
-makedepends=('cmake' 'openmpi')
+depends=('fftw-bettersimd')
+makedepends=('cmake')
+optdepends=('openmpi: needed for parallelization across nodes'
+             'lapack: normal modes and matrix manipulation'
+             'blas: normal modes and matrix manipulation'
+             'boost: better implementation support for smart pointers and exception handling'
+             'libxml2: required for running test suite'
+             'zlib: used by TNG for compressing some kinds of data'
+             'libx11: needed for gmx view'
+             'lesstif: needed for gmx view'
+             'vmd: visualization')
 options=('!libtool')
 source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
 sha1sums=('990a93d62964eb80d310e713790795a36681eacf')
@@ -22,17 +31,17 @@ build() {
          -DGMX_MPI=ON \
          -DGMX_DEFAULT_SUFFIX=OFF \
          -DREGRESSIONTEST_DOWNLOAD=ON
-  make -j 8
+  make
+}
+
+check() {
+  cd ${srcdir}/${pkgname}-${pkgver}/build
+  make check
 }
 
 package() {
-
-  msg2 "Making the single precision executables"
   cd ${srcdir}/${pkgname}-${pkgver}/build
   make DESTDIR=${pkgdir} install
-  make check
-
-  msg2 "Installing completion and environment setup script"
   mkdir -p ${pkgdir}/etc/profile.d/
   mkdir -p ${pkgdir}/usr/share/bash-completion/completions
   install -D -m755 ${srcdir}/${pkgname}-${pkgver}/src/programs/completion/gmx-completion.bash "${pkgdir}/usr/share/bash-completion/completions/gromacs"
@@ -41,5 +50,4 @@ package() {
   chmod 755 ${pkgdir}/etc/profile.d/GMXRC
   rm -f ${pkgdir}/usr/bin/completion.*
   rm -f ${pkgdir}/usr/bin/GMXRC
-
 }
