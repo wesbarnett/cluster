@@ -11,10 +11,8 @@ depends=('fftw-bettersimd')
 makedepends=('cmake')
 optdepends=('openmpi: needed for parallelization across nodes'
              'lapack: normal modes and matrix manipulation'
-             'blas: normal modes and matrix manipulation'
-             'boost: better implementation support for smart pointers and exception handling'
+             'boost-libs: better implementation support for smart pointers and exception handling'
              'libxml2: required for running test suite'
-             'zlib: used by TNG for compressing some kinds of data'
              'libx11: needed for gmx view'
              'lesstif: needed for gmx view'
              'vmd: visualization')
