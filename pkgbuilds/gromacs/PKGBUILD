@@ -3,7 +3,8 @@
 pkgname=gromacs
 pkgver=5.0.5
 pkgrel=1
-pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of motion for systems with hundreds to millions of particles.'
+pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
+motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
 license=("GPL")
 arch=('i686' 'x86_64')
@@ -42,7 +43,8 @@ package() {
   make DESTDIR=${pkgdir} install
   mkdir -p ${pkgdir}/etc/profile.d/
   mkdir -p ${pkgdir}/usr/share/bash-completion/completions
-  install -D -m755 ${srcdir}/${pkgname}-${pkgver}/src/programs/completion/gmx-completion.bash "${pkgdir}/usr/share/bash-completion/completions/gromacs"
+  install -D -m755 ${srcdir}/${pkgname}-${pkgver}/src/programs/completion/gmx-completion.bash \
+    "${pkgdir}/usr/share/bash-completion/completions/gromacs"
   mv ${pkgdir}/usr/bin/GMXRC.* ${pkgdir}/etc/profile.d/
   sed "s:/usr/bin:/etc/profile.d:" ${pkgdir}/usr/bin/GMXRC > ${pkgdir}/etc/profile.d/GMXRC
   chmod 755 ${pkgdir}/etc/profile.d/GMXRC
