@@ -1,6 +1,5 @@
 #!/bin/bash
 # Arch install script for cluster
-# For a two disk setup with second disk on /data
 
 INTERFACE=eno1		# internal
 EXTINTERFACE=enp3s2	# external (on master)
@@ -42,17 +41,11 @@ sgdisk -n 2:+0M:+$ROOT -c 2:"Linux /" -t 2:8300 /dev/sda
 sgdisk -n 3 -c 3:"Linux /home" -t 3:8300 /dev/sda
 sgdisk -n 4 -c 4:"BIOS boot partition" -t 4:ef02 /dev/sda
 
-# Extra disk
-echo "Partitioning /dev/sdb..."
-sgdisk -og /dev/sdb
-sgdisk -n 1 -c 1:"Linux /data" -t 1:8300 /dev/sdb
-
 # Format the partitions
 echo "Creating filesystems..."
 mkfs.ext4 /dev/sda1
 mkfs.ext4 /dev/sda2
 mkfs.ext4 /dev/sda3
-mkfs.ext4 /dev/sdb1
 
 # Mount the partitions (mount root first)
 echo "Mounting partitions..."
@@ -61,8 +54,6 @@ mkdir -p /mnt/boot
 mount /dev/sda1 /mnt/boot
 mkdir -p /mnt/home
 mount /dev/sda3 /mnt/home
-mkdir -p /mnt/data
-mount /dev/sdb1 /mnt/data
 
 # Install base system
 echo "Installing base system..."
@@ -183,14 +174,11 @@ else
 
 	echo "Creating home directory export..."
 	mkdir -p /mnt/srv/nfs4/home
-	mkdir -p /mnt/srv/nfs4/data
 
 	echo "/home /srv/nfs4/home  none   bind   0   0" >> /mnt/etc/fstab
-    echo "/data /srv/nfs4/data  none   bind   0   0" >> /mnt/etc/fstab
 
 	echo "/srv/nfs4/ 192.168.0.0/24(rw,fsid=root,no_subtree_check)" >> /mnt/etc/exports
 	echo "/srv/nfs4/home 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /mnt/etc/exports
-	echo "/srv/nfs4/data 192.168.0.0/24(rw,no_subtree_check,nohide)" >> /mnt/etc/exports
 
 	arch-chroot /mnt exportfs -rav
 
@@ -245,8 +233,6 @@ echo "Adding other users..."
 for user in $users; do
     echo "Adding $user..."
 	arch-chroot /mnt useradd -m -G wheel -s /bin/bash $user
-	mkdir /mnt/data/$user
-	chown -R $user:$user /mnt/data/$user
 	echo $user:$password | arch-chroot /mnt chpasswd
 	arch-chroot /mnt chage -d 0 $user
 done
