@@ -6,7 +6,7 @@ pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
-license=("GPL")
+license=("LGPL")
 arch=('i686' 'x86_64')
 depends=('fftw-bettersimd')
 makedepends=('cmake')

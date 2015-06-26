@@ -1,12 +1,12 @@
 # Maintainer: James Barnett
 pkgname=lammps  
-pkgver=12May2015
+pkgver=r9026.12b5742
 pkgrel=1 
 pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
 url="http://lammps.sandia.gov/"
 arch=('i686' 'x86_64')
 license=('GPL')
-depends=('fftw' 'openmpi')
+depends=('fftw-bettersimd' 'openmpi')
 makedepends=()
 source=(git://git.lammps.org/lammps-ro.git)
 md5sums=('SKIP')
@@ -35,6 +35,11 @@ build() {
   make yes-user-intel
   make yes-user-omp
   make -j 8 mpi
+}
+
+pkgver() {
+  cd $srcdir/lammps-ro/src
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 package() {
