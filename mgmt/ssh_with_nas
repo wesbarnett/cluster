@@ -12,8 +12,6 @@ NNODES=12
 
 ################################
 
-SESSION="clusterssh"
-
 which tmux 2>/dev/null 1>&2
 
 if [[ $? -eq 1 ]]; then
@@ -22,19 +20,25 @@ if [[ $? -eq 1 ]]; then
     exit
 fi
 
-tmux has-session -t $SESSION
+tmux has-session -t "clusterssh"
 if [[ $? -eq 0 ]]; then
     echo "A cluster management session already exists! You should attached to"
     echo "that one first, or rename it, before proceeding." 
     exit
 fi
 
-tmux new-session -s $SESSION -d 'ssh node2' 2>/dev/null 1>&2
+tmux new-session -s "clusterssh" -d 'ssh node2' 2>/dev/null 1>&2
 
 for i in {$NNODES..3}; do
-    tmux split-window -t $SESSION -d 'ssh node'$i'' 2>/dev/null 1>&2
-    tmux select-layout -t $SESSION tiled 2>/dev/null 1>&2
+    tmux split-window -t "clusterssh" -d 'ssh node'$i'' 2>/dev/null 1>&2
+    tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 done
+
+tmux split-window -t "clusterssh" -d 'ssh nas1' 2>/dev/null 1>&2
+tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
+
+tmux split-window -t "clusterssh" -d 'ssh nas2' 2>/dev/null 1>&2
+tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 
 tmux set-window-option synchronize-panes on 2>/dev/null 1>&2
 
