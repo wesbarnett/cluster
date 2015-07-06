@@ -1,7 +1,7 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 # Note: march needs to be set equal to "native" in /etc/makepkg.conf
 pkgname=gromacs
-pkgver=5.0.5
+pkgver=5.1
 pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
@@ -18,12 +18,12 @@ optdepends=('openmpi: needed for parallelization across nodes'
              'lesstif: needed for gmx view'
              'vmd: visualization')
 options=('!libtool')
-source=(ftp://ftp.gromacs.org/pub/gromacs/${pkgname}-${pkgver}.tar.gz)
-sha1sums=('990a93d62964eb80d310e713790795a36681eacf')
+source=(https://kth.box.com/shared/static/2zv838xowcsmthpfgahc4pbbml5rkpll.gz)
+md5sums=('ec9ce69cede421f8f05964f619df9a98')
 
 build() {
-  mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}-rc1/build
+  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
   cmake .. \
          -DCMAKE_INSTALL_PREFIX=/usr \
          -DCMAKE_INSTALL_LIBDIR=lib \
@@ -34,20 +34,25 @@ build() {
 }
 
 check() {
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
   make check
 }
 
 package() {
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
   make DESTDIR=${pkgdir} install
   mkdir -p ${pkgdir}/etc/profile.d/
   mkdir -p ${pkgdir}/usr/share/bash-completion/completions
-  install -D -m755 ${srcdir}/${pkgname}-${pkgver}/src/programs/completion/gmx-completion.bash \
-    "${pkgdir}/usr/share/bash-completion/completions/gromacs"
-  mv ${pkgdir}/usr/bin/GMXRC.* ${pkgdir}/etc/profile.d/
+  mv ${pkgdir}/usr/bin/gmx-completion.bash "${pkgdir}/usr/share/bash-completion/completions/gmx-completion.bash"
+  mv ${pkgdir}/usr/bin/gmx-completion-gmx.bash "${pkgdir}/usr/share/bash-completion/completions/gmx-completion-gmx.bash"
+  sed -e "s:\$GMXBIN/gmx-completion.bash:/usr/share/bash-completion/completions/gmx-completion.bash:g" \
+      -e "s:\$GMXBIN/gmx-completion-\*.bash:/usr/share/bash-completion/completions/gmx-completion-\*.bash:g" \
+        ${pkgdir}/usr/bin/GMXRC.bash > ${pkgdir}/etc/profile.d/GMXRC.bash
+  chmod 755 ${pkgdir}/etc/profile.d/GMXRC.bash
+  rm -f ${pkgdir}/usr/bin/GMXRC.bash
   sed "s:/usr/bin:/etc/profile.d:" ${pkgdir}/usr/bin/GMXRC > ${pkgdir}/etc/profile.d/GMXRC
   chmod 755 ${pkgdir}/etc/profile.d/GMXRC
+  mv ${pkgdir}/usr/bin/GMXRC.* ${pkgdir}/etc/profile.d/
   rm -f ${pkgdir}/usr/bin/completion.*
   rm -f ${pkgdir}/usr/bin/GMXRC
 }

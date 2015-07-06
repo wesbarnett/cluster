@@ -1,5 +1,6 @@
 pkg
 src
 *.tar.gz
+*.gz
 *.pkg.tar.xz
 lammps-ro
