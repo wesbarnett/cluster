@@ -1,7 +1,7 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 # Note: march needs to be set equal to "native" in /etc/makepkg.conf
 pkgname=gromacs
-pkgver=5.1
+pkgver=5.0.6
 pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
@@ -18,12 +18,12 @@ optdepends=('openmpi: needed for parallelization across nodes'
              'lesstif: needed for gmx view'
              'vmd: visualization')
 options=('!libtool')
-source=(https://kth.box.com/shared/static/2zv838xowcsmthpfgahc4pbbml5rkpll.gz)
-md5sums=('ec9ce69cede421f8f05964f619df9a98')
+source=(https://kth.box.com/shared/static/7uwctwj33h4uo2f8d1tmdyj9afaj3hzy.gz)
+md5sums=('b0bb547227143e15b3715c0115a2f4af')
 
 build() {
-  mkdir -p ${srcdir}/${pkgname}-${pkgver}-rc1/build
-  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
+  mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   cmake .. \
          -DCMAKE_INSTALL_PREFIX=/usr \
          -DCMAKE_INSTALL_LIBDIR=lib \
@@ -34,12 +34,12 @@ build() {
 }
 
 check() {
-  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   make check
 }
 
 package() {
-  cd ${srcdir}/${pkgname}-${pkgver}-rc1/build
+  cd ${srcdir}/${pkgname}-${pkgver}/build
   make DESTDIR=${pkgdir} install
   mkdir -p ${pkgdir}/etc/profile.d/
   mkdir -p ${pkgdir}/usr/share/bash-completion/completions
