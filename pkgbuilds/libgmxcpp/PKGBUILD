@@ -1,0 +1,31 @@
+# Maintainer: James W. Barnett <jbarnet4 at tulane dot edu>
+pkgname=libgmxcpp
+pkgver=r405.8c26624
+pkgrel=1
+pkgdesc="A library for use in analyzing GROMACS simulation output files"
+arch=(any)
+url="https://github.com/wesbarnett/libgmxcpp"
+license=('GPL','LGPL')
+makedepends=('cmake')
+source=(${url}/archive/v${pkgver}.tar.gz)
+source=('git://github.com/wesbarnett/libgmxcpp.git')
+md5sums=('SKIP')
+
+build() {
+	cd "$pkgname"
+	mkdir -p build
+	cd build
+	cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+}
+
+pkgver() {
+    cd "$srcdir/libgmxcpp"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd "$pkgname"/build
+  git checkout master
+  git pull
+  make DESTDIR="$pkgdir/" install
+}

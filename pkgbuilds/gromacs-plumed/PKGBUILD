@@ -1,0 +1,45 @@
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+# Note: march needs to be set equal to "native" in /etc/makepkg.conf
+pkgname=gromacs-plumed
+_pkgname=gromacs
+pkgver=5.0.6
+pkgrel=1
+pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
+motion for systems with hundreds to millions of particles.'
+url='http://www.gromacs.org/'
+license=("LGPL")
+arch=('i686' 'x86_64')
+depends=('fftw-bettersimd')
+makedepends=('cmake')
+optdepends=('openmpi: needed for parallelization across nodes'
+             'lapack: normal modes and matrix manipulation'
+             'boost-libs: better implementation support for smart pointers and exception handling'
+             'libxml2: required for running test suite'
+             'libx11: needed for gmx view'
+             'lesstif: needed for gmx view'
+             'vmd: visualization')
+options=('!libtool')
+source=(ftp://ftp.gromacs.org/pub/gromacs/gromacs-${pkgver}.tar.gz)
+md5sums=('b0bb547227143e15b3715c0115a2f4af')
+
+build() {
+  cd ${srcdir}/${_pkgname}-${pkgver}
+# plumed patch -p --runtime --shared
+  mkdir -p ${srcdir}/${_pkgname}-${pkgver}/build
+  cd ${srcdir}/${_pkgname}-${pkgver}/build
+  cmake .. \
+         -DCMAKE_INSTALL_PREFIX=/usr/local/gromacs-plumed \
+         -DCMAKE_INSTALL_LIBDIR=lib #\
+#        -DREGRESSIONTEST_DOWNLOAD=ON
+  make -j 8
+}
+
+check() {
+   cd ${srcdir}/${_pkgname}-${pkgver}/build
+   make check
+}
+
+package() {
+  cd ${srcdir}/${_pkgname}-${pkgver}/build
+  make DESTDIR=${pkgdir} install
+}

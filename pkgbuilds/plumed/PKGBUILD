@@ -1,0 +1,56 @@
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+# Currently tracks with v2.2 git branch
+pkgname=plumed
+_pkgname=plumed2
+pkgver=2.2
+pkgrel=1
+pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
+motion for systems with hundreds to millions of particles.'
+url='http://www.gromacs.org/'
+license=("LGPL")
+arch=('i686' 'x86_64')
+options=('!libtool')
+source=("git://github.com/plumed/plumed2.git"
+        "StaticUnionSphSh.cpp")
+md5sums=('SKIP'
+         '67049dbbb5719ff61968aed7039aaabd')
+
+prepare()  {
+    cd ${srcdir}/${_pkgname}
+    git checkout v2.2
+    git pull
+    cd src
+    touch analysis.on
+    touch bias.on
+    touch cltools.on
+    touch colvar.on
+    touch crystallization.on
+    touch function.on
+    touch generic.on
+    touch manyrestraints.on
+    touch mapping.on
+    touch molfile.on
+    touch multicolvar.on
+    touch reference.on
+    touch secondarystructure.on
+    touch setup.on
+    touch vatom.on
+    touch vesselbase.on
+}
+
+build() {
+    cd ${srcdir}/${_pkgname}
+    # Unset these to avoid some compilation problems
+    CPPFLAGS=""
+    CFLAGS=""
+    CXXFLAGS=""
+    LDFLAGS=""
+    ./configure --prefix=/usr --disable-mpi
+    cp ../../StaticUnionSphSh.cpp src/colvar
+    make -j 8
+}
+
+package() {
+  cd ${srcdir}/${_pkgname}
+  make DESTDIR=${pkgdir} install
+}
