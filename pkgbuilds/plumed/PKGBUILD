@@ -47,7 +47,12 @@ build() {
     LDFLAGS=""
     ./configure --prefix=/usr --disable-mpi
     cp ../../StaticUnionSphSh.cpp src/colvar
-    make -j 8
+    make
+}
+
+check() {
+  cd ${srcdir}/${_pkgname}/regtest
+  make
 }
 
 package() {

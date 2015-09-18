@@ -8,7 +8,7 @@ motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
 license=("LGPL")
 arch=('i686' 'x86_64')
-depends=('fftw-bettersimd')
+depends=('fftw-bettersimd' 'plumed')
 makedepends=('cmake')
 optdepends=('openmpi: needed for parallelization across nodes'
              'lapack: normal modes and matrix manipulation'
