@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
  
 # James W. Barnett <jbarnet4@tulane.edu>
 
@@ -31,7 +31,7 @@ fi
 
 tmux new-session -s $SESSION -d 'ssh node2' 2>/dev/null 1>&2
 
-for i in {$NNODES..3}; do
+for ((i=$NNODES;i>=3;i--)); do
     tmux split-window -t $SESSION -d 'ssh node'$i'' 2>/dev/null 1>&2
     tmux select-layout -t $SESSION tiled 2>/dev/null 1>&2
 done

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+user=yang
+password=$1
+
+echo "User: $user"
+echo "Password: $password"
+
+useradd -m -G wheel -s /bin/bash $user
+echo $user:$password | chpasswd
+chage -d 0 $user

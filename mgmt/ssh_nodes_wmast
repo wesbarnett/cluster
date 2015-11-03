@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
  
 # James W. Barnett <jbarnet4@tulane.edu>
 
@@ -32,12 +32,14 @@ fi
 cd
 tmux new-session -s "clusterssh" -d 2>/dev/null 1>&2
 
-for i in {$NNODES..2}; do
+for ((i=$NNODES;i>=2;i--)); do
     tmux split-window -t "clusterssh" -d 'ssh node'$i'' 2>/dev/null 1>&2
     tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 done
 
 #tmux split-window -t "clusterssh" -d 'ssh nas1' 2>/dev/null 1>&2
+#tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
+#tmux split-window -t "clusterssh" -d 'ssh nas2' 2>/dev/null 1>&2
 #tmux select-layout -t "clusterssh" tiled 2>/dev/null 1>&2
 
 tmux set-window-option synchronize-panes on 2>/dev/null 1>&2
