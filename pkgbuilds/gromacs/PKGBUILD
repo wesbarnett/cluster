@@ -1,8 +1,8 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 # Note: march needs to be set equal to "native" in /etc/makepkg.conf
 pkgname=gromacs
-pkgver=5.1
-pkgrel=3
+pkgver=5.1.1
+pkgrel=2
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
 url='http://www.gromacs.org/'
@@ -19,7 +19,7 @@ optdepends=('openmpi: needed for parallelization across nodes'
              'vmd: visualization')
 options=('!libtool')
 source=(ftp://ftp.gromacs.org/pub/gromacs/gromacs-${pkgver}.tar.gz)
-md5sums=('e5ba00d47c4c6dec107951a7d4605f31')
+md5sums=('5c075141aa69dc4859cad0a55e61d35e')
 
 prepare() {
     cd ${srcdir}/${pkgname}-${pkgver}
@@ -28,7 +28,8 @@ prepare() {
 
 build() {
   mkdir -p ${srcdir}/${pkgname}-${pkgver}/build
-  cd ${srcdir}/${pkgname}-${pkgver}/build
+  cd ${srcdir}/${pkgname}-${pkgver}
+  cd build
   cmake .. \
          -DCMAKE_INSTALL_PREFIX=/usr \
          -DCMAKE_INSTALL_LIBDIR=lib \
