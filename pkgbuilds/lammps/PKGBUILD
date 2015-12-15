@@ -1,6 +1,6 @@
 # Maintainer: James Barnett
 pkgname=lammps  
-pkgver=r9026.12b5742
+pkgver=r14304
 pkgrel=1 
 pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
 url="http://lammps.sandia.gov/"
@@ -12,6 +12,7 @@ source=(git://git.lammps.org/lammps-ro.git)
 md5sums=('SKIP')
 build() {
   cd $srcdir/lammps-ro/src
+  git checkout $pkgver
   # See Section 2.2 of the manual about these options
   # This compiles it with png, ffmeg support. Also points to already
   # installed fftw library instead of making its own and uses single precision
@@ -34,12 +35,7 @@ build() {
   make yes-user-fep
   make yes-user-intel
   make yes-user-omp
-  make -j 8 mpi
-}
-
-pkgver() {
-  cd $srcdir/lammps-ro/src
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  make -j mpi
 }
 
 package() {
