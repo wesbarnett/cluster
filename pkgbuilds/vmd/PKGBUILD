@@ -1,7 +1,7 @@
 # James W. Barnett <jbarnet4@tulane.edu>
 pkgname=vmd
 pkgver=1.9.2
-pkgrel=1
+pkgrel=2
 pkgdesc="Visual Molecular Dynamics"
 url="http://www.ks.uiuc.edu/Research/vmd/"
 license=('custom')
@@ -27,5 +27,5 @@ package() {
   ./configure
   cd src; make install
   sed -i 's|set defaultvmddir=.*|set defaultvmddir=/usr/lib/vmd|' "${pkgdir}/usr/bin/vmd"
-  ln -s /usr/lib/vmd/plugins/LINUXAMD64/bin/catdcd5.1/catdcd ${pkgdir}/usr/bin/
+  ln -sf /usr/lib/vmd/plugins/LINUXAMD64/bin/catdcd5.1/catdcd ${pkgdir}/usr/bin/
 }

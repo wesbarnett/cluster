@@ -2,7 +2,7 @@
 
 pkgname=uncrustify
 pkgver=0.61
-pkgrel=1
+pkgrel=2
 pkgdesc="A source code beautifier"
 arch=('i686' 'x86_64')
 url="http://uncrustify.sourceforge.net/"

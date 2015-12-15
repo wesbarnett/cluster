@@ -2,7 +2,7 @@
 pkgname=libgmxcpp
 pkgver=3.4beta0
 _pkgver=3.4-beta0
-pkgrel=1
+pkgrel=2
 pkgdesc="A library for use in analyzing GROMACS simulation output files"
 arch=(any)
 url="https://github.com/wesbarnett/libgmxcpp"
