@@ -35,7 +35,6 @@ build() {
   make yes-user-fep
   make yes-user-intel
   make yes-user-omp
-  make -j mpi
 }
 
 package() {
