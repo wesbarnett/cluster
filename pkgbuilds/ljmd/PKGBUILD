@@ -1,0 +1,24 @@
+# Maintainer: James W. Barnett <jbarnet4@tulane.edu>
+pkgname=ljmd
+pkgver=0.1beta
+pkgrel=1
+pkgdesc='A simple Molecular Dynamics simulator of Lennard-Jonesium'
+url='http://www.github.com/wesbarnett/lennardjones'
+license=("GPL")
+arch=('x86' 'x86_64')
+depends=('boost' 'boost-libs' 'xdrfile')
+makedepends=('cmake')
+source=(https://github.com/wesbarnett/lennardjones/archive/v${pkgver}.tar.gz)
+md5sums=('c20da0cf507a17ca9ca127c6130d5ef8')
+
+build() {
+  mkdir -p ${srcdir}/lennardjones-${pkgver}/build
+  cd ${srcdir}/lennardjones-${pkgver}/build
+  cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+  make
+}
+
+package() {
+  cd ${srcdir}/lennardjones-${pkgver}/build
+  make DESTDIR=${pkgdir} install
+}
