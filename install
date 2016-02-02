@@ -11,7 +11,7 @@ users=
 password=
 
 
-PACSTRAP="base base-devel nfs-utils wget grub vim openssh mlocate xorg-server xorg-xauth pkgfile iptables sshguard intel-ucode"
+PACSTRAP="base base-devel nfs-utils wget grub vim openssh mlocate xorg-server xorg-xauth pkgfile iptables reflector sshguard intel-ucode"
 
 echo "Which type of machine are you installing on?"
 select TYPE in master node; do
@@ -47,6 +47,8 @@ mkdir -p /mnt/boot
 mount /dev/sda1 /mnt/boot
 mkdir -p /mnt/home
 mount /dev/sda3 /mnt/home
+
+reflector --latest 30 --number 6 --sort rate -i https --save /etc/pacman.d/mirrorlist
 
 echo "Installing base system..."
 pacstrap /mnt $PACSTRAP
@@ -274,6 +276,32 @@ rm -f /firstboot
 FIRSTBOOT
 
 fi
+
+cat -> /mnt/etc/systemd/system/reflector.service <<REFLECTOR
+[Unit]
+Description=Pacman mirrorlist update
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/reflector --latest 30 --number 6 --sort rate -i https --save
+/etc/pacman.d/mirrorlist
+REFLECTOR
+
+cat -> /mnt/etc/systemd/system/reflector.timer <<REFLECTORTIMER
+
+[Unit]
+Description=Run reflector weekly
+
+[Timer]
+OnCalendar=weekly
+AccuracySec=12h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+REFLECTORTIMER
+
+arch-chroot /mnt systemctl enable reflector.timer
 
 echo "Generating first-boot service... "
 cat -> /mnt/etc/systemd/system/firstboot.service <<FIRSTBOOTSERV
