@@ -1,6 +1,6 @@
 # Maintainer: James Barnett
 pkgname=lammps  
-pkgver=r14304
+pkgver=r14624
 pkgrel=1 
 pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
 url="http://lammps.sandia.gov/"

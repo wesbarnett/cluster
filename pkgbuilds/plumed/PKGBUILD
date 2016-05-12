@@ -2,7 +2,7 @@
 # Currently tracks with v2.2 git branch
 pkgname=plumed
 _pkgname=plumed2
-pkgver=2.2
+pkgver=2.2.1
 pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
@@ -10,15 +10,13 @@ url='http://www.gromacs.org/'
 license=("LGPL")
 arch=('i686' 'x86_64')
 options=('!libtool')
-source=("git://github.com/plumed/plumed2.git"
+source=("https://github.com/plumed/plumed2/archive/v$pkgver.tar.gz"
         "StaticUnionSphSh.cpp")
 md5sums=('SKIP'
          '67049dbbb5719ff61968aed7039aaabd')
 
 prepare()  {
-    cd ${srcdir}/${_pkgname}
-    git checkout v2.2
-    git pull
+    cd ${srcdir}/${_pkgname}-$pkgver
     cd src
     touch analysis.on
     touch bias.on
@@ -39,7 +37,7 @@ prepare()  {
 }
 
 build() {
-    cd ${srcdir}/${_pkgname}
+    cd ${srcdir}/${_pkgname}-$pkgver
     # Unset these to avoid some compilation problems
     CPPFLAGS=""
     CFLAGS=""
@@ -51,11 +49,11 @@ build() {
 }
 
 check() {
-  cd ${srcdir}/${_pkgname}/regtest
+  cd ${srcdir}/${_pkgname}-$pkgver/regtest
   make
 }
 
 package() {
-  cd ${srcdir}/${_pkgname}
+  cd ${srcdir}/${_pkgname}-$pkgver
   make DESTDIR=${pkgdir} install
 }
