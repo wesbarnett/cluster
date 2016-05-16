@@ -1,8 +1,7 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
-# Currently tracks with v2.2 git branch
 pkgname=plumed
 _pkgname=plumed2
-pkgver=2.2.1
+pkgver=2.2.2
 pkgrel=1
 pkgdesc='A versatile package to perform molecular dynamics, i.e. simulate the Newtonian equations of
 motion for systems with hundreds to millions of particles.'
@@ -12,7 +11,7 @@ arch=('i686' 'x86_64')
 options=('!libtool')
 source=("https://github.com/plumed/plumed2/archive/v$pkgver.tar.gz"
         "StaticUnionSphSh.cpp")
-md5sums=('SKIP'
+md5sums=('231f5c4065244e196cbf28a355a25a48'
          '67049dbbb5719ff61968aed7039aaabd')
 
 prepare()  {
@@ -43,7 +42,7 @@ build() {
     CFLAGS=""
     CXXFLAGS=""
     LDFLAGS=""
-    ./configure --prefix=/usr --disable-mpi
+    ./configure --prefix=/usr
     cp ../../StaticUnionSphSh.cpp src/colvar
     make
 }
