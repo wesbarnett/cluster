@@ -1,8 +1,8 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 pkgname=ambertools
-pkgver=15
-_pkgver=14
-pkgrel=2
+pkgver=16
+_pkgver=16
+pkgrel=1
 pkgdesc="Consists of several independently developed packages that work well by
 themselves, and with Amber itself. The suite can also be used to carry out
 complete molecular dynamics simulations, with either explicit water or
@@ -10,22 +10,31 @@ generalized Born solvent models. The sander program is now a part of AmberTools.
 license=('GPL')
 arch=('i686' 'x86_64')
 url="http://www.ambermd.org"
-depends=('netcdf' 'netcdf-fortran' 'tcsh' 'python' 'libxext' 'python2' 'libxt')
-source=(AmberTools${pkgver}.tar.bz2)
-md5sums=('5dc41462b923b2b1d087e31974ac746d')
+depends=('netcdf' 'netcdf-fortran' 'tcsh' 'python' 'libxext' 'python' 'libxt'
+'python-scipy' 'python-matplotlib' 'openmpi')
+source=( AmberTools${_pkgver}.tar.bz2 
+        '0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch')
+md5sums=('ca723e6780f70f46497282c9ea6645a3'
+         'd9f68acc69195b42e0bf3d9640d22df0')
 
 # Need to have already downloaded the source
 
 build() {
-  cd ${srcdir}/amber${_pkgver}
   export AMBERHOME=$(pwd)
-  ./configure -nofftw3 --with-netcdf /usr/ gnu
-  make -j 8
+  CXXFLAGS="-fno-strict-aliasing"
+  ./configure -openmp -nofftw3 -noX11 --with-netcdf /usr/ gnu
+  cp ../0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch AmberTools/src/cpptraj
+  cd AmberTools/src/cpptraj
+  patch -p1 < 0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch
+  cd -
+  make
 }
 
 package() {
 
-  rm ${srcdir}/amber${_pkgver}/bin/yacc
+  test -f $srcdir/amber${_pkgver}/amber.sh && source $srcdir/amber${_pkgver}/amber.sh
+  cd ${srcdir}/amber${_pkgver}
+  make install
 
   install -d ${pkgdir}/etc/
   install -d ${pkgdir}/etc/profile.d
@@ -40,7 +49,7 @@ package() {
 
   files=$(find -type f)
   for file in $files; do
-      install $file ${pkgdir}/opt/${_pkgver}/$file
+      install $file ${pkgdir}/opt/amber${_pkgver}/$file
   done
 
   sed -i 's/export AMBERHOME.*/export AMBERHOME=\/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.sh
