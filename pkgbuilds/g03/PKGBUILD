@@ -1,14 +1,18 @@
 # Maintainer: James W. Barnett <jbarnet4@tulane.edu>
 pkgname=g03
 pkgver=1
-pkgrel=1
+pkgrel=2
 pkgdesc="Gaussian 03"
 license=('GPL')
 arch=('i686' 'x86_64')
 url="http://www.gaussian.com"
 depends=('lib32-gcc-libs')
-source=(g03.tar.gz)
-sha1sums=('e9c4ad40ae58d8234a858713c009d887a74c644b')
+source=('g03.tar.gz'
+        'g03.install'
+        'g03.sh')
+sha1sums=('e9c4ad40ae58d8234a858713c009d887a74c644b'
+          'ab15a5ee66e45ab0f230126bd26738d4925cbda8'
+          'ea1f1fa6683583d3ad947370781b48775930079b')
 
 # Need to have already downloaded the source
 
@@ -18,21 +22,19 @@ package() {
   install -d ${pkgdir}/etc/
   install -d ${pkgdir}/etc/profile.d
   install g03.sh ${pkgdir}/etc/profile.d/
-  install -d ${pkgdir}/usr/local/g03
+  install -d ${pkgdir}/opt/g03
 
   cd ${srcdir}/g03
   directories=$(find -type d)
 
   for dir in $directories; do
-      install -d ${pkgdir}/usr/local/g03/$dir
+      install -d ${pkgdir}/opt/g03/$dir
   done
 
   files=$(find -type f)
   for file in $files; do
-      install $file ${pkgdir}/usr/local/g03/$file
+      install $file ${pkgdir}/opt/g03/$file
   done
-
-  export g03root=/usr/local
 
 }
 

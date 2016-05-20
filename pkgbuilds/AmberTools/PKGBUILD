@@ -2,7 +2,7 @@
 pkgname=ambertools
 pkgver=15
 _pkgver=14
-pkgrel=1
+pkgrel=2
 pkgdesc="Consists of several independently developed packages that work well by
 themselves, and with Amber itself. The suite can also be used to carry out
 complete molecular dynamics simulations, with either explicit water or
@@ -27,134 +27,27 @@ package() {
 
   rm ${srcdir}/amber${_pkgver}/bin/yacc
 
-  install -d ${pkgdir}/usr/bin
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/chemistry
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/chemistry/tinker
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/chemistry/amber
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/chemistry/amber/mdin
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/cpinutils
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/mdoutanalyzer
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/MMPBSA_mods
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/ParmedTools
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/ParmedTools/gui
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/bin/ParmedTools/simulations
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/antechamber
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/charmmlipid2amber
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/chamber
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/dgdb
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/dgdb/basepairs
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/dgdb/functions
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/dgdb/stacking
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/fd_data
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/cmd
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/cmd/oldff
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/lib
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/lib/oldff
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/parm
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/pixmaps
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/prep
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/prep/oldff
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/leap/prep/protonated_nucleic
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mmpbsa
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/etc
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/fragLib
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/hybridize
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/metals
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/nmr
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/nonStandardAAs
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/PAM
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/mtkpp/ZAFF/201108
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/pixmap
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/adna.std
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/arna.std
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/axes
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/bdna.std
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/dna3
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/dna.amber94
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/dna.amberua
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/hetatm.amber94
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/leap
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/pro-dna.nmr
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/protein.amber94
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/protein.opls
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/rna.amber94
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/reslib/rna.amberua
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/rism1d
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/rism1d/model
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/dat/slko
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Graph
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Diagnostics  
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/GA
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Log
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Minimizers
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/MM
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Molecule
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Parsers  
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Statistics
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/tinyxml  
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/include/mtkpp/Utils
-  install -d ${pkgdir}/usr/share/amber${_pkgver}/lib
   install -d ${pkgdir}/etc/
   install -d ${pkgdir}/etc/profile.d
+  install -d ${pkgdir}/opt/amber${_pkgver}
 
-  sed -i 's/export AMBERHOME.*/export AMBERHOME=\/usr\/share\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.sh
+  cd ${srcdir}/amber${_pkgver}
+  directories=$(find -type d)
+
+  for dir in $directories; do
+      install -d ${pkgdir}/opt/amber${_pkgver}/$dir
+  done
+
+  files=$(find -type f)
+  for file in $files; do
+      install $file ${pkgdir}/opt/${_pkgver}/$file
+  done
+
+  sed -i 's/export AMBERHOME.*/export AMBERHOME=\/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.sh
   install -m 755 ${srcdir}/amber${_pkgver}/amber.sh ${pkgdir}/etc/profile.d/
-  sed -i 's/setenv AMBERHOME.*/setenv AMBERHOME \/usr\/share\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.csh
+  sed -i 's/setenv AMBERHOME.*/setenv AMBERHOME \/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.csh
   install -m 755 ${srcdir}/amber${_pkgver}/amber.csh ${pkgdir}/etc/profile.d/
 
-  for folder in bin; do
-
-    cd ${srcdir}/amber${_pkgver}/$folder
-
-    files=$(find . -maxdepth 1 -type f -exec ls {} \; );
-    for file in $files; do
-      install ${srcdir}/amber${_pkgver}/$folder/$file ${pkgdir}/usr/$folder/$file
-    done
-  done
-
-  for folder in include dat; do
-
-    cd ${srcdir}/amber${_pkgver}/$folder
-
-    files=$(find . -type f -exec ls {} \; );
-    for file in $files; do
-      install ${srcdir}/amber${_pkgver}/$folder/$file ${pkgdir}/usr/share/amber${_pkgver}/$folder/$file
-    done
-  done
-
-
-  for folder in lib; do
-
-    cd ${srcdir}/amber${_pkgver}/$folder
-
-    files=$(find . -maxdepth 1 -type f -exec ls {} \; );
-    for file in $files; do
-      install -m 644 ${srcdir}/amber${_pkgver}/$folder/$file ${pkgdir}/usr/share/amber${_pkgver}/$folder/$file
-    done
-  done
-
-  #for folder in chemistry cpinutils mdoutanalyzer MMPBSA_mods ParmedTools; do
-
-  #  cd ${srcdir}/amber${_pkgver}/bin/$folder
-
-  #  files=$(find . -type f -exec ls {} \; );
-  #  for file in $files; do
-  #    install ${srcdir}/amber${_pkgver}/bin/$folder/$file ${pkgdir}/usr/share/amber${_pkgver}/bin/$folder/$file
-  #  done
-  #done
-
-  cd ${pkgdir}/usr/bin
-  files=$(find . -maxdepth 1 -type f -exec ls {} \; );
-  for file in $files; do
-      ln -s /usr/bin/$file ${pkgdir}/usr/share/amber${_pkgver}/bin/$file
-  done
 
 }
 

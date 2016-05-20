@@ -1,9 +1,8 @@
-export g03root=/usr/local/
+export g03root=/opt/
 export GAUSS_SCRDIR=/home/$USER
-gr=$HOME
-if [ "$g03root" ]
-  then gr=$g03root
-  fi
+if [[ -d "$g03root" ]];
+    then gr=$g03root
+fi
 GAUSS_EXEDIR="$gr/g03/bsd:$gr/g03/private:$gr/g03"
 GAUSS_ARCHDIR="$gr/g03/arch"
 GMAIN=$GAUSS_EXEDIR
