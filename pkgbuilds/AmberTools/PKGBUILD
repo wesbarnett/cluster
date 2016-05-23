@@ -20,45 +20,50 @@ md5sums=('ca723e6780f70f46497282c9ea6645a3'
 # Need to have already downloaded the source
 
 build() {
-  export AMBERHOME=$(pwd)
-  CXXFLAGS="-fno-strict-aliasing"
-  ./configure -openmp -nofftw3 -noX11 --with-netcdf /usr/ gnu
-  cp ../0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch AmberTools/src/cpptraj
-  cd AmberTools/src/cpptraj
-  patch -p1 < 0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch
-  cd -
-  make
+    CXXFLAGS="-fno-delete-null-pointer-checks $CXXFLAGS"
+    CFLAGS="-fno-delete-null-pointer-checks $CLFAGS"
+    cd $srcdir/amber${_pkgver}
+    ./configure -nofftw3 -noX11 --with-netcdf /usr/ gnu
+    test -f $srcdir/amber${_pkgver}/amber.sh && source $srcdir/amber${_pkgver}/amber.sh
+    cp ../0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch AmberTools/src/cpptraj
+    cd AmberTools/src/cpptraj
+    patch -p1 < 0001-DRR-Cpptraj-Switch-to-checking-the-error-fail-bits-o.patch
+    cd -
+    make install
 }
 
 package() {
 
-  test -f $srcdir/amber${_pkgver}/amber.sh && source $srcdir/amber${_pkgver}/amber.sh
-  cd ${srcdir}/amber${_pkgver}
-  make install
+    test -f $srcdir/amber${_pkgver}/amber.sh && source $srcdir/amber${_pkgver}/amber.sh
+    cd ${srcdir}/amber${_pkgver}
 
-  install -d ${pkgdir}/etc/
-  install -d ${pkgdir}/etc/profile.d
-  install -d ${pkgdir}/opt/amber${_pkgver}
+    install -d ${pkgdir}/etc/
+    install -d ${pkgdir}/etc/profile.d
+    install -d ${pkgdir}/opt/amber${_pkgver}
 
-  cd ${srcdir}/amber${_pkgver}
-  directories=$(find -type d)
+    cd ${srcdir}/amber${_pkgver}
+    directories=$(find -type d | grep -v "src" | grep -v "test")
 
-  for dir in $directories; do
-      install -d ${pkgdir}/opt/amber${_pkgver}/$dir
-  done
+    for dir in $directories; do
+        install -d ${pkgdir}/opt/amber${_pkgver}/$dir
+    done
 
-  files=$(find -type f)
-  for file in $files; do
-      install $file ${pkgdir}/opt/amber${_pkgver}/$file
-  done
+    files=$(find -type f | grep -v "src" | grep -v "test")
+    for file in $files; do
+        install $file ${pkgdir}/opt/amber${_pkgver}/$file
+    done
 
-  sed -i 's/export AMBERHOME.*/export AMBERHOME=\/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.sh
-  install -m 755 ${srcdir}/amber${_pkgver}/amber.sh ${pkgdir}/etc/profile.d/
-  sed -i 's/setenv AMBERHOME.*/setenv AMBERHOME \/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.csh
-  install -m 755 ${srcdir}/amber${_pkgver}/amber.csh ${pkgdir}/etc/profile.d/
+    sed -i 's/export AMBERHOME.*/export AMBERHOME=\/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.sh
+    install -m 755 ${srcdir}/amber${_pkgver}/amber.sh ${pkgdir}/etc/profile.d/
+    sed -i 's/setenv AMBERHOME.*/setenv AMBERHOME \/opt\/amber'${_pkgver}'/' ${srcdir}/amber${_pkgver}/amber.csh
+    install -m 755 ${srcdir}/amber${_pkgver}/amber.csh ${pkgdir}/etc/profile.d/
 
 
 }
 
+check() {
+    cd ${srcdir}/amber${_pkgver}
+    make test
+}
 
 
