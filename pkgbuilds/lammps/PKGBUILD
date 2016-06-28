@@ -1,6 +1,6 @@
 # Maintainer: James Barnett
 pkgname=lammps  
-pkgver=r14624
+pkgver=r15061
 pkgrel=1 
 pkgdesc="Large-scale Atomic/Molecular Massively Parallel Simulator."
 url="http://lammps.sandia.gov/"
@@ -31,10 +31,11 @@ build() {
   make yes-kspace
   make yes-molecule
   make yes-rigid
-  make yes-xtc
   make yes-user-fep
   make yes-user-intel
   make yes-user-omp
+  make yes-user-misc
+  make mpi
 }
 
 package() {
